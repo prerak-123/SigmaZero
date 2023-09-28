@@ -1,2 +1,2 @@
 # SigmaZero
-A reinforcement learning based Chess Engine
+Implementation of AlphaZero as part of the course project in CS337.
