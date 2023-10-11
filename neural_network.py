@@ -2,41 +2,54 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+def get_conv_block(in_channels:int, out_channels:int=256)->nn.Sequential:
+    return nn.Sequential(
+        nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1),
+        nn.BatchNorm2d(out_channels),
+        nn.ReLU()
+    )
+
+class ResBlock(nn.Module):
+    """
+    Residual block for the architecture
+    """
+    def __init__(self,in_channels:int=256, mid_channels:int=256, out_channels:int=256):
+        super(ResBlock, self).__init__()
+        self.block = nn.Sequential(
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(mid_channels),
+            nn.ReLU(),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(out_channels)
+        )
+    def forward(self, x:torch.Tensor):
+        return F.relu(x + self.block(x))
+   
+
 class AgentNetwork(nn.Module):
     """
     The NN Architecture for the agent, consisting of residual layers followed by a policy and value head
     """
-    def __init__(self, input_dims=(8,8), input_channels=119, num_hidden_blocks=19, output_dims=4672):
+    def __init__(self, input_dims:(int,int)=(8,8), input_channels:int=119, num_hidden_blocks:int=19, output_dims:int=4672):
         super(AgentNetwork, self).__init__()
         self.input_dims=input_dims
         self.input_channels=input_channels
         self.num_hidden_blocks=num_hidden_blocks
         self.output_dims=output_dims
         
-        self.conv_block = self.get_conv_block(input_channels)
-        self.residual_blocks = list()
-        for _ in range(num_hidden_blocks):
-            self.residual_blocks.append(self.get_residual_block(256))
-        self.policy_head = self.get_policy_head(256)
-        self.value_head = self.get_value_head(256)
+        self.encoder = self.get_encoder_0(input_channels=input_channels,num_res_blocks=num_hidden_blocks)
+                                     
+        self.policy_head = self.get_policy_head(input_channels=256)
+        self.value_head = self.get_value_head(input_channels=256)
     
-    def get_residual_block(self, input_channels):
-        return nn.Sequential(
-            nn.Conv2d(in_channels=input_channels, out_channels=256, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-        )
-    
-    def get_conv_block(self, input_channels):
-        return nn.Sequential(
-            nn.Conv2d(in_channels=input_channels, out_channels=256, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU()
-        )
-    
-    def get_policy_head(self, input_channels):
+    def get_encoder_0(self, input_channels:int,num_res_blocks:int)->nn.Sequential:
+        enc = nn.Sequential(get_conv_block(in_channels=input_channels, out_channels=256))
+        for i in range(num_res_blocks):
+            enc.add_module(f'ResBlock_{i}', ResBlock())
+        return enc
+        
+    def get_policy_head(self, input_channels:int)->nn.Sequential:
         return nn.Sequential(
             nn.Conv2d(in_channels=input_channels, out_channels=2, kernel_size=1, stride=1),
             nn.BatchNorm2d(2),
@@ -46,7 +59,7 @@ class AgentNetwork(nn.Module):
             nn.Sigmoid()
         )
     
-    def get_value_head(self, input_channels):
+    def get_value_head(self, input_channels:int)->nn.Sequential:
         return nn.Sequential(
             nn.Conv2d(in_channels=input_channels, out_channels=1, kernel_size=1, stride=1),
             nn.BatchNorm2d(1),
@@ -57,40 +70,20 @@ class AgentNetwork(nn.Module):
             nn.Linear(256, 1),
             nn.Tanh()
         )
-# why even lol    
-    def perform_residual(self, x, ind):
-        y = self.residual_blocks[ind](x)
-        return F.relu(x + y)
-    
-    def value_forward(self, x):
-        '''
-        x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
-        '''
-        res = self.conv_block(x)
-        for res_layer in self.residual_blocks:
-            res1 = res_layer(res)
-            res = F.relu(res + res1)
-        res = self.value_head(res)
-        return res
+        
+        
+    '''
+    x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
+    '''
+    def value_forward(self, x:torch.Tensor)->torch.Tensor:
+        emb = self.encoder(x)
+        return self.value_head(emb)
 
-    def policy_forward(self, x):
-        '''
-        x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
-        '''
-        res = self.conv_block(x)
-        for res_layer in self.residual_blocks:
-            res1 = res_layer(res)
-            res = F.relu(res + res1)
-        res = self.policy_head(res)
-        return res
+    def policy_forward(self, x:torch.Tensor)->torch.Tensor:
+        emb = self.encoder(x)
+        return self.policy_head(emb)
 
-    def forward(self, x):
-        '''
-        x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
-        '''
-        res = self.conv_block(x)
-        for res_layer in self.residual_blocks:
-            res1 = res_layer(res)
-            res = F.relu(res + res1)
-        return (self.value_head(res), self.policy_head(res))
+    def forward(self, x:torch.Tensor)->(torch.Tensor, torch.Tensor):
+        emb = self.encoder(x)
+        return (self.value_head(emb), self.policy_head(emb))
         
