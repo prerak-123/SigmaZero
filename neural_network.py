@@ -57,7 +57,7 @@ class AgentNetwork(nn.Module):
             nn.Linear(256, 1),
             nn.Tanh()
         )
-    
+# why even lol    
     def perform_residual(self, x, ind):
         y = self.residual_blocks[ind](x)
         return F.relu(x + y)
@@ -67,9 +67,9 @@ class AgentNetwork(nn.Module):
         x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
         '''
         res = self.conv_block(x)
-        for i in range(self.num_hidden_blocks):
-            res = self.perform_residual(res, i)
-            
+        for res_layer in self.residual_blocks:
+            res1 = res_layer(res)
+            res = F.relu(res + res1)
         res = self.value_head(res)
         return res
 
@@ -78,8 +78,9 @@ class AgentNetwork(nn.Module):
         x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
         '''
         res = self.conv_block(x)
-        for i in range(self.num_hidden_blocks):
-            res = self.perform_residual(res, i)
+        for res_layer in self.residual_blocks:
+            res1 = res_layer(res)
+            res = F.relu(res + res1)
         res = self.policy_head(res)
         return res
 
@@ -87,5 +88,9 @@ class AgentNetwork(nn.Module):
         '''
         x: A tensor with shape(N, C, H, W) where N is the batch size, C = input_channels, H,W = input_dims
         '''
-        return (self.value_forward(x), self.policy_forward(x))
+        res = self.conv_block(x)
+        for res_layer in self.residual_blocks:
+            res1 = res_layer(res)
+            res = F.relu(res + res1)
+        return (self.value_head(res), self.policy_head(res))
         
