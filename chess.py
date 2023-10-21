@@ -41,7 +41,7 @@ class ChessEnv:
         ### this will be changed !!
         self.movenum = 0
         ### load the initial embedding ### -> assuming initially history is repeated rather than empty
-        self.board_embedding = torch.concat([self.__board_to_tensor(b) for b in self.board_init],dim=0).to(self.torch_device).unsqueeze(1).repeat(1,8,1)
+        self.board_embedding = self.__board_to_tensor(self.board).repeat(1,self.board_size,1,1)
         
         self.reps = torch.zeros((self.batch_size,1),device=self.torch_device)
         
@@ -51,19 +51,19 @@ class ChessEnv:
     
     ## (turn, 4 castling rights,movenum)
     def __get_board_states_single(self,board:chess.Board)->None:
-        return torch.tensor([btoi(board.turn),btoi(board.has_kingside_castling_rights(chess.WHITE)),btoi(board.has_kingside_castling_rights(chess.BLACK)),btoi(board.has_queenside_castling_rights(chess.WHITE)),btoi(board.has_queenside_castling_rights(chess.BLACK)),self.movenum],device=self.torch_device)
+        return torch.tensor([[btoi(board.turn),btoi(board.has_kingside_castling_rights(chess.WHITE)),btoi(board.has_kingside_castling_rights(chess.BLACK)),btoi(board.has_queenside_castling_rights(chess.WHITE)),btoi(board.has_queenside_castling_rights(chess.BLACK)),self.movenum]],device=self.torch_device)
     ## add reps too
     def __get_board_states(self)->torch.Tensor:
         sixvars =  torch.cat([self.__get_board_states_single(b) for b in self.board],dim=0)
         return torch.cat((sixvars,self.reps),dim=1)
     # f me #
     def __board_to_tensor(self,boards:list|tuple)->torch.Tensor:
-        arr = (np.array([b.__str__().split() for b in boards]).reshape(-1,1,8,8)==strenc)*1
+        arr = (np.array([b.__str__().split() for b in boards]).reshape(-1,1,self.board_size,self.board_size)==strenc)*1
         return torch.Tensor(arr, device=self.torch_device)
         
     def __update_embedding(self)->None: ### maybe this works correctly
-        self.board_embedding = torch.cat([self.board_embedding[:,16:,:,:],self.__board_to_tensor(self.board)],dim=0)
-        self.reps = (self.reps + 1)*torch.all(torch.all(torch.all(self.board_embedding[:,-24:-12,:,:]==self.board_embedding[:,-12:,:,:],dim=3),dim=2),dim=1,keepdim=True)
+        self.board_embedding = torch.cat([self.board_embedding[:,self.num_piecetype:,:,:],self.__board_to_tensor(self.board)],dim=0)
+        self.reps = (self.reps + 1)*torch.all(torch.all(torch.all(self.board_embedding[:,-2*self.num_piecetype:-self.num_piecetype,:,:]==self.board_embedding[:,-self.num_piecetype:,:,:],dim=3),dim=2),dim=1,keepdim=True)
         self.board_states = self.__get_board_states()
         return 
     
