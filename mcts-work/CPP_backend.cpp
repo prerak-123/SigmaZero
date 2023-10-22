@@ -6,9 +6,6 @@
 #include <string>
 #include <functional>
 
-// g++ $(python3-config --cflags) -fPIE -c test.cpp -o test.o
-// g++ test.o -L /usr/lib/x86_64-linux-gnu/ -lboost_system -lboost_python310 $(python3-config --embed --ldflags) -o test
-
 #define ll long long int
 
 class C_Node{
