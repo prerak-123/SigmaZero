@@ -45,6 +45,7 @@ class C_Edge{
         boost::multiprecision::cpp_dec_float_50 P;
 
         C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior);
+		boost::multiprecision::cpp_dec_float_50 upper_confidence_bound(boost::multiprecision::cpp_dec_float_50 noise);
 };
 
 // class C_Action{
@@ -54,19 +55,22 @@ class C_Edge{
 class C_MCTS{
     public:
         C_Node* root;
-        std::vector<C_Node*> game_path;
+        std::vector<C_Edge*> game_path;
         boost::python::object cur_board;
         // TODO: put agent in here somehow
-        bool stochastic;
+		boost::python::object agent;
+		bool stochastic;
+		std::vector<std::vector<boost::python::object>> outputs;
 
         void run_simulations(int n);
         C_Node* select_child(C_Node* node);
         void map_valid_move(boost::python::object move);
-        std::unordered_map<boost::python::object, boost::multiprecision::cpp_dec_float_50> probabilities_to_actions(vector<vector<vector<boost::multiprecision::cpp_dec_float_50>>> probabilities, std::string board); 
+        std::unordered_map<boost::python::object, boost::multiprecision::cpp_dec_float_50> probabilities_to_actions(std::vector<std::vector<std::vector<boost::multiprecision::cpp_dec_float_50>>> probabilities, std::string board); 
         C_Node* expand(C_Node* leaf);
         C_Node* backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value);
 
-        C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic = false);
+        C_MCTS(boost::python::object agent, std::string state, bool stochastic = false);
+
 };      
 
 C_Node::C_Node(std::string state){
@@ -77,23 +81,23 @@ C_Node::C_Node(std::string state){
 }
 
 std::string C_Node::step(boost::python::object action){
-    Py_Initialize();
+    // Py_Initialize();
     boost::python::object chess_module = boost::python::import("chess");
     // boost::python::object Move_from_chess = chess_module.attr("Move");
     boost::python::object board = chess_module.attr("Board")(this->state);
     // boost::python::object board = Board_function(this->state);
     boost::python::object new_board = board.attr("push")(action);
     std::string new_state = boost::python::extract<std::string>(new_board.attr("fen")());
-    Py_Finalize();
+    // Py_Finalize();
     return new_state;    
 }
 
 bool C_Node::is_game_over(){
-    Py_Initialize();
+    // Py_Initialize();
     boost::python::object chess_module = boost::python::import("chess");
     boost::python::object board = chess_module.attr("Board")(this->state);
     bool is_game_over = boost::python::extract<bool>(board.attr("is_game_over")());
-    Py_Finalize();
+    // Py_Finalize();
     return is_game_over;
 }
 
@@ -126,49 +130,13 @@ C_Edge* C_Node::get_edge(boost::python::object action){
         if (action == this->edges[i]->action){
             return this->edges[i];
         }
-    }
+    }	
     return NULL;
 }
 
 uint64_t C_Node_Alloter(std::string state){
     C_Node* node = new C_Node(state);
     return (uint64_t) node;
-}
-
-C_Node* select_child(C_Node* node){
-    while(! node->is_leaf()){
-        if(! node->edges.size()){
-            return node;
-        }
-
-        std::vector<boost::multiprecision::cpp_dec_float> noise (node->edges.size(), 1);
-
-        if(this->stochastic && node->state == this->root->state){
-            // TODO : Put dirichlet noise thing
-        }
-
-        C_Edge* best_edge = NULL;
-        boost::multiprecision::cpp_dec_float best_score = -1e10;
-
-        for(int i=0; i<node->edges.size(); i++){
-            C_Edge* edge = node->edges[i];
-            boost::multiprecision::cpp_dec_float score = edge->upper_confidence_bound(noise[i]);
-            if(score > best_score){
-                best_edge = edge;
-                best_score = score;
-            }
-        }
-
-        if(best_edge == NULL){
-            assert(0);
-        }
-
-        this->game_path.push_back(best_edge);
-
-        return best_edge->output_node;
-    }
-
-    return NULL;
 }
 
 C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior){
@@ -192,10 +160,99 @@ boost::multiprecision::cpp_dec_float_50 C_Edge::upper_confidence_bound(boost::mu
     return 0;
 }
 
-C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic = false){
+C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic){
     this->root = new C_Node(state);
     this->agent = agent;
     this->stochastic = stochastic;
+}
+
+C_Node* C_MCTS::select_child(C_Node* node){
+    while(! node->is_leaf()){
+        if(! node->edges.size()){
+            return node;
+        }
+
+        std::vector<boost::multiprecision::cpp_dec_float_50> noise (node->edges.size(), 1);
+
+        if(this->stochastic && node->state == this->root->state){
+            // TODO : Put dirichlet noise thing
+        }
+
+        C_Edge* best_edge = NULL;
+        boost::multiprecision::cpp_dec_float_50 best_score = -1e10;
+
+        for(int i=0; i<node->edges.size(); i++){
+            C_Edge* edge = node->edges[i];
+            boost::multiprecision::cpp_dec_float_50 score = edge->upper_confidence_bound(noise[i]);
+            if(score > best_score){
+                best_edge = edge;
+                best_score = score;
+            }
+        }
+
+        if(best_edge == NULL){
+            assert(0);
+        }
+
+        this->game_path.push_back(best_edge);
+
+        return best_edge->output_node;
+    }
+
+    return NULL;
+}
+
+void C_MCTS::map_valid_move(boost::python::object move){
+	boost::python::object from_square = move.attr("from_square");
+	boost::python::object to_square = move.attr("to_square");
+	boost::python::object chess = boost::python::import("chess");
+	boost::python::object plane_index;
+	boost::python::object piece = this->cur_board.attr("piece_at")(from_square);
+	boost::python::object mapper = boost::python::import("mapper");
+	boost::python::object Mapping = mapper.attr("Mapping");
+
+	if(move.attr("promotion") && move.attr("promotion") != chess.attr("QUEEN")){
+				boost::python::object x = Mapping.attr("get_underpromotion_move")(move.attr("promotion"), from_square, to_square);
+		
+		plane_index = Mapping.attr("mapper")[x[0]][1-x[1]];
+	}
+	else{
+		if(piece.attr("piece_type") == chess.attr("KNIGHT")){
+			boost::python::object direction = Mapping.attr("get_knight_move")(from_square, to_square);
+			plane_index = Mapping.attr("mapper")[direction];
+		}
+		else{
+			boost::python::object x = Mapping.attr("get_queenline_move")(from_square, to_square);
+			boost::python::object np = boost::python::import("numpy");
+			plane_index = Mapping.attr("mapper")[x[0]][np.attr("abs")(x[1])-1];
+		}
+	}
+	
+	boost::python::object row = from_square % 8;
+	boost::python::object col = 7 - (from_square / 8);
+	// TODO: Ensure correctness here
+	this->outputs.push_back({move, plane_index, row, col});
+}
+
+// TODO : Need suggestions of how to implement probabilities to actions
+
+C_Node* C_MCTS::expand(C_Node* leaf){
+	// boost::python::object chess = boost::python::import("chess");
+	// boost::python::object board = chess.attr("Board")(leaf->state);
+
+	// boost::python::object possible_actions = boost::python::extract<list>(board.attr("generate_legal_moves")());
+
+	return NULL;
+}
+
+C_Node* C_MCTS::backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value){
+	for(int i=0; i<this->game_path.size(); ++i){
+		this->game_path[i]->input_node->N += 1;
+		this->game_path[i]->N += 1;
+		this->game_path[i]->W += value;
+	}
+
+	return end_node;
 }
 
 // int main(){

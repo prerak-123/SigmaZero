@@ -12,8 +12,19 @@ int main(int argc, char* argv[]) {
   Py_Initialize();  
   python::object sample_module = python::import("chess");
   python::object result = sample_module.attr("STARTING_FEN");
-//   python::object result = sample_function(5.0);
-  std::string y = python::extract<std::string>(result);
-  cout << y << endl;
+  // python::object result = sample_function(5.0);
+  cout << python::extract<std::string>(result) << endl;
+  
+  Py_DECREF(sample_module);
+  Py_DECREF(result);
+  Py_Finalize();
+  // cout << y << endl;
+  cout << "hello world" << endl;
+  cout << "hello world" << endl;
+  cout << "hello world" << endl;
+  cout << "hello world" << endl;
+  cout << "hello world" << endl;
+  cout << "hello world" << endl;
+
   return 0;
 }
