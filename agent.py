@@ -8,6 +8,7 @@ import utils
 import chess
 import time
 import config
+import datetime
 
 class Agent:
     def __init__(self,local_preds:bool = False, model_path:str|None = None,state:str = chess.STARTING_FEN):
@@ -18,27 +19,32 @@ class Agent:
         """
         self.local_preds = local_preds
         if local_preds:
-            self.model = AgentNetwork()
+            self.model = AgentNetwork(input_channels = config.IN_CHANNELS, num_hidden_blocks = config.NUM_BLOCKS)
             if model_path is not None:
                 self.model.load_state_dict(torch.load(model_path))
         else :
             raise NotImplementedError("Server predictions not implemented yet")
         
         self.state = state
-        self.mcts = MCTS(state=state)
+        self.mcts = MCTS(self, state=state)
         
     def run_simulations(self,n:int=1):
         self.model.eval()
         with torch.no_grad():
             self.mcts.run_simulations(n)
             
-    def save_model(self,timestamped:bool = False):
+    def save_model(self,timestamped:bool = False)->str:
         if timestamped:
-            torch.save(self.model.state_dict(),f"{config.MODEL_FOLDER}/model-{time.time()}.h5")
-        else:
-            torch.save(self.model.state_dict(),f"{config.MODEL_FOLDER}/model.h5")
+            model_path = f"{config.MODEL}model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth"
             
-    def predict(self,data:torch.Tensor):
+            torch.save(self.model.state_dict(), model_path)
+        else:
+            model_path = f"{config.MODEL}model.pth"
+            torch.save(self.model.state_dict(), model_path)
+        
+        return model_path
+            
+    def predict(self, data:torch.Tensor):
         if self.local_preds:
             return self.predict_local(data)
         return self.predict_server(data)
@@ -48,6 +54,7 @@ class Agent:
         with torch.no_grad():
             p,v = self.model(data)
             return p,v
+
     def predict_server(self,data:torch.Tensor):
         raise NotImplementedError("Server predictions not implemented yet")
   

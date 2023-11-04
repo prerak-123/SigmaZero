@@ -99,7 +99,9 @@ class Trainer:
         plt.savefig(f"{config.IMAGES}loss-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.png")
         
     def save_model(self):
-        torch.save(self.model, f"{config.MODEL}model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth")    
+        model_path = f"{config.MODEL}model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth"
+        torch.save(self.model.state_dict(), model_path)    
+        return model_path
 
 '''
 TODO:
