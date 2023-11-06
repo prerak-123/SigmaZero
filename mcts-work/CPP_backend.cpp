@@ -7,6 +7,10 @@
 #include <string>
 #include <functional>
 
+//TODO: 1. implement change node function
+//TODO: 2. implement functionalities for getting edge action ucis and N values
+//TODO: 3. Implement remaining functions
+
 #define ll long long int
 
 class C_Node;
@@ -22,14 +26,15 @@ class C_Node{
         boost::multiprecision::cpp_int N;
         boost::multiprecision::cpp_dec_float_50 value;
 
+        C_Node();
         C_Node(std::string state);
         std::string step(boost::python::object action);
         bool is_game_over();
         bool is_leaf();
-        C_Edge* add_child(C_Node* child, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior);
+        uint64_t add_child(C_Node* child, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior);
         std::vector<C_Node*> get_all_children();
         void get_all_children_helper(std::vector<C_Node*> &children);
-        C_Edge* get_edge(boost::python::object action);
+        uint64_t get_edge(boost::python::object action);
 };
 
 class C_Edge{   
@@ -44,6 +49,7 @@ class C_Edge{
         boost::multiprecision::cpp_dec_float_50 W;
         boost::multiprecision::cpp_dec_float_50 P;
 
+        C_Edge();
         C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior);
 		boost::multiprecision::cpp_dec_float_50 upper_confidence_bound(boost::multiprecision::cpp_dec_float_50 noise);
 };
@@ -63,15 +69,17 @@ class C_MCTS{
 		std::vector<std::vector<boost::python::object>> outputs;
 
         void run_simulations(int n);
-        C_Node* select_child(C_Node* node);
+        uint64_t select_child(C_Node* node);
         void map_valid_move(boost::python::object move);
         std::unordered_map<boost::python::object, boost::multiprecision::cpp_dec_float_50> probabilities_to_actions(std::vector<std::vector<std::vector<boost::multiprecision::cpp_dec_float_50>>> probabilities, std::string board); 
-        C_Node* expand(C_Node* leaf);
-        C_Node* backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value);
+        uint64_t expand(C_Node* leaf);
+        uint64_t backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value);
 
+        C_MCTS();
         C_MCTS(boost::python::object agent, std::string state, bool stochastic = false);
+};     
 
-};      
+C_Node::C_Node(){}
 
 C_Node::C_Node(std::string state){
     this->state = state;
@@ -105,10 +113,10 @@ bool C_Node::is_leaf(){
     return this->N == 0;
 }
 
-C_Edge* C_Node::add_child(C_Node* child, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior){
+uint64_t C_Node::add_child(C_Node* child, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior){
     C_Edge* edge = new C_Edge(this, child, action, prior);
     this->edges.push_back(edge);
-    return edge;
+    return (uint64_t)edge;
 }
 
 std::vector<C_Node*> C_Node::get_all_children(){
@@ -125,19 +133,21 @@ void C_Node::get_all_children_helper(std::vector<C_Node*> &children){
     }
 }
 
-C_Edge* C_Node::get_edge(boost::python::object action){
+uint64_t C_Node::get_edge(boost::python::object action){
     for (int i = 0; i < this->edges.size(); i++){
         if (action == this->edges[i]->action){
-            return this->edges[i];
+            return (uint64_t)this->edges[i];
         }
     }	
-    return NULL;
+    return 0;
 }
 
 uint64_t C_Node_Alloter(std::string state){
     C_Node* node = new C_Node(state);
     return (uint64_t) node;
 }
+
+C_Edge::C_Edge(){}
 
 C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object action, boost::multiprecision::cpp_dec_float_50 prior){
     this->input_node = input_node;
@@ -160,16 +170,20 @@ boost::multiprecision::cpp_dec_float_50 C_Edge::upper_confidence_bound(boost::mu
     return 0;
 }
 
+C_MCTS::C_MCTS(){}
+
 C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic){
     this->root = new C_Node(state);
     this->agent = agent;
     this->stochastic = stochastic;
 }
 
-C_Node* C_MCTS::select_child(C_Node* node){
+void C_MCTS::run_simulations(int n){}
+
+uint64_t C_MCTS::select_child(C_Node* node){
     while(! node->is_leaf()){
         if(! node->edges.size()){
-            return node;
+            return (uint64_t)node;
         }
 
         std::vector<boost::multiprecision::cpp_dec_float_50> noise (node->edges.size(), 1);
@@ -196,10 +210,10 @@ C_Node* C_MCTS::select_child(C_Node* node){
 
         this->game_path.push_back(best_edge);
 
-        return best_edge->output_node;
+        return (uint64_t)best_edge->output_node;
     }
 
-    return NULL;
+    return 0;
 }
 
 void C_MCTS::map_valid_move(boost::python::object move){
@@ -236,23 +250,72 @@ void C_MCTS::map_valid_move(boost::python::object move){
 
 // TODO : Need suggestions of how to implement probabilities to actions
 
-C_Node* C_MCTS::expand(C_Node* leaf){
+uint64_t C_MCTS::expand(C_Node* leaf){
 	// boost::python::object chess = boost::python::import("chess");
 	// boost::python::object board = chess.attr("Board")(leaf->state);
 
 	// boost::python::object possible_actions = boost::python::extract<list>(board.attr("generate_legal_moves")());
 
-	return NULL;
+	return 0;
 }
 
-C_Node* C_MCTS::backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value){
+uint64_t C_MCTS::backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value){
 	for(int i=0; i<this->game_path.size(); ++i){
 		this->game_path[i]->input_node->N += 1;
 		this->game_path[i]->N += 1;
 		this->game_path[i]->W += value;
 	}
 
-	return end_node;
+	return (uint64_t)end_node;
+}
+
+class shit{
+    public:
+        int N;
+
+        int getN(){
+            return N;
+        }
+
+        shit(){
+            N = 6969;
+        }
+};
+
+BOOST_PYTHON_MODULE(CPP_backend)
+{
+    boost::python::class_ <C_Node>("Node")
+        .def(boost::python::init<>())
+        .def(boost::python::init<std::string>())
+        .def("step", &C_Node::step)
+        .def("is_game_over", &C_Node::is_game_over)
+        .def("is_leaf", &C_Node::is_leaf)
+        .def("add_child", &C_Node::add_child)
+        .def("get_all_children", &C_Node::get_all_children)
+        .def("get_edge", &C_Node::get_edge)
+        ;
+
+    boost::python::class_ <C_Edge>("Edge")
+        .def(boost::python::init<>())
+        .def(boost::python::init<C_Node*, C_Node*, boost::python::object, boost::multiprecision::cpp_dec_float_50>())
+        .def("upper_confidence_bound", &C_Edge::upper_confidence_bound)
+        ;
+
+    boost::python::class_ <C_MCTS>("MCTS")
+        .def(boost::python::init<>())
+        .def(boost::python::init<boost::python::object, std::string, bool>())
+        .def("run_simulations", &C_MCTS::run_simulations)
+        // .def("select_child", &C_MCTS::select_child)
+        // .def("map_valid_move", &C_MCTS::map_valid_move)
+        // .def("probabilities_to_actions", &C_MCTS::probabilities_to_actions)
+        // .def("expand", &C_MCTS::expand)
+        // .def("backpropagate", &C_MCTS::backpropagate)
+        ;
+
+    boost::python::class_<shit>("shit")
+        .def(boost::python::init<>())
+        .def("getN", &shit::getN)
+        ;
 }
 
 // int main(){

@@ -4,6 +4,7 @@ import config
 import numpy as np
 import config
 from datetime import datetime
+from mcts import MCTS
 
 def get_winner(result: str) -> int:
     return 1 if result == "1-0" else - 1 if result == "0-1" else 0
@@ -87,13 +88,23 @@ class Game:
             current_player.mcts = MCTS(current_player, state=self.env.board.fen(), stochastic=stochastic)
         else:
             # change the root node to the node after playing the two previous moves
-            try:
-                node = current_player.mcts.root.get_edge(previous_moves[0].action).output_node
-                node = node.get_edge(previous_moves[1].action).output_node
-                current_player.mcts.root = node
-            except AttributeError:
+            # try:
+            #     node = current_player.mcts.root.get_edge(previous_moves[0].action).output_node
+            #     node = node.get_edge(previous_moves[1].action).output_node
+            #     current_player.mcts.root = node
+            # except AttributeError:
+            #     current_player.mcts = MCTS(current_player, state=self.env.board.fen(), stochastic=stochastic)
+        #     if(current_player.mcts.root.has_edge(previous_moves[0].action)):
+        #         node = node.get_edge(previous_moves[0].action).output_node
+        #         if(node.has_edge(previous_moves[1].action)):
+        #             node = node.get_edge(previous_moves[1].action).output_node
+        #             current_player.mcts.root = node
+        #             make_new = False
+        # # play n simulations from the root node
+        #     if make_new:
+        #         current_player.mcts = MCTS(current_player, state=self.env.board.fen(), stochastic=stochastic)
+            if not current_player.mcts.move_root(previous_moves[0].action, previous_moves[1].action):
                 current_player.mcts = MCTS(current_player, state=self.env.board.fen(), stochastic=stochastic)
-        # play n simulations from the root node
         current_player.run_simulations(n=config.SIMULATIONS_PER_MOVE)
 
         moves = current_player.mcts.root.edges
