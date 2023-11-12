@@ -4,6 +4,7 @@ import config
 import numpy as np
 import config
 from datetime import datetime
+import time
 # from mcts import MCTS
 from CPP_backend import MCTS
 
@@ -112,9 +113,11 @@ class Game:
             if not current_player.mcts.move_root(previous_moves[0].item(), previous_moves[1].item()):
                 current_player.mcts = MCTS(current_player, self.env.board.fen(), stochastic)
 
-        # print('out')
+        t1 = time.time()
         current_player.run_simulations(n=config.SIMULATIONS_PER_MOVE)
-        # print("outside run")
+        t2 = time.time()
+        print(f"Time taken for {config.SIMULATIONS_PER_MOVE} simulations: {t2 - t1}")
+
 
         moves = []
         moves = current_player.mcts.get_all_edges(moves)

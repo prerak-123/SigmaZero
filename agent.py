@@ -30,12 +30,8 @@ class Agent:
         self.mcts = MCTS(self, state, True)
         
     def run_simulations(self,n:int=1):
-        # print("in agent run sims")
-        # self.model.eval()
-        # print('after eval')
         with torch.no_grad():
-            # print("hello")
-            # print(self.mcts)
+
             self.mcts.run_simulations(n)
             
     def save_model(self,timestamped:bool = False)->str:
