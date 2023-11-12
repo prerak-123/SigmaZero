@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from neural_network import AgentNetwork
-from mcts import MCTS # missing
+# from mcts import MCTS # missing
+from CPP_backend import *
 import utils
 import chess
 import time
@@ -26,11 +27,15 @@ class Agent:
             raise NotImplementedError("Server predictions not implemented yet")
         
         self.state = state
-        self.mcts = MCTS(self, state=state)
+        self.mcts = MCTS(self, state, True)
         
     def run_simulations(self,n:int=1):
-        self.model.eval()
+        # print("in agent run sims")
+        # self.model.eval()
+        # print('after eval')
         with torch.no_grad():
+            # print("hello")
+            # print(self.mcts)
             self.mcts.run_simulations(n)
             
     def save_model(self,timestamped:bool = False)->str:
@@ -45,15 +50,20 @@ class Agent:
         return model_path
             
     def predict(self, data:torch.Tensor):
+        data = torch.Tensor(data).to(torch.float32).unsqueeze(0)
+        # print(data.shape)
+        # print("in agent predict")
         if self.local_preds:
+            # print('local')
             return self.predict_local(data)
         return self.predict_server(data)
     
     def predict_local(self,data:torch.Tensor):
-        self.model.eval()
+        # self.model.eval()
+        
         with torch.no_grad():
-            p,v = self.model(data)
-            return p,v
+            v, p = self.model(data)
+            return p, v.item()
 
     def predict_server(self,data:torch.Tensor):
         raise NotImplementedError("Server predictions not implemented yet")
