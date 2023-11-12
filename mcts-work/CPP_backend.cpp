@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <dirichlet.h>
 
 #define ll long long int
 
@@ -75,7 +76,7 @@ class C_MCTS{
 
 C_Node::C_Node(std::string state){
     this->state = state;
-    // this->turn = ; // TODO: Insert python function here
+    this->turn = boost::python::extract<bool>(board.attr("turn"));
     this->N = 0;
     this->value = 0;
 }
@@ -156,9 +157,9 @@ C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object ac
 }
 
 boost::multiprecision::cpp_dec_float_50 C_Edge::upper_confidence_bound(boost::multiprecision::cpp_dec_float_50 noise){
-    // TODO : Implement this shit
-    return 0;
+    return (this->W / this->N) + UCB_EXPLORATION_CONSTANT * sqrt(log(this->input_node->N) / this->N) + noise;
 }
+
 
 C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic){
     this->root = new C_Node(state);
@@ -167,40 +168,56 @@ C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic){
 }
 
 C_Node* C_MCTS::select_child(C_Node* node){
-    while(! node->is_leaf()){
-        if(! node->edges.size()){
+    while (!node->is_leaf()) {
+        if (node->edges.empty()) {
             return node;
         }
 
-        std::vector<boost::multiprecision::cpp_dec_float_50> noise (node->edges.size(), 1);
+        if (this->stochastic && node->state == this->root->state) {
+            // Use dirichlet noise for the root node
+            std::vector<double> dirichlet_noise = dirichlet_distribution<std::default_random_engine>(DIRICHLET_ALPHA)();
+            std::vector<boost::multiprecision::cpp_dec_float_50> dirichlet_noise_cpp;
 
-        if(this->stochastic && node->state == this->root->state){
-            // TODO : Put dirichlet noise thing
+            // noise to boost::multiprecision::cpp_dec_float_50
+            for (const auto& value : dirichlet_noise) {
+                dirichlet_noise_cpp.push_back(value);
+            }
+
+            // upper confidence bound w dirichlet noise
+            for (int i = 0; i < node->edges.size(); i++) {
+                C_Edge* edge = node->edges[i];
+                boost::multiprecision::cpp_dec_float_50 score = edge->upper_confidence_bound(dirichlet_noise_cpp[i]);
+                if (score > best_score) {
+                    best_edge = edge;
+                    best_score = score;
+                }
+            }
         }
 
         C_Edge* best_edge = NULL;
         boost::multiprecision::cpp_dec_float_50 best_score = -1e10;
 
-        for(int i=0; i<node->edges.size(); i++){
+        // upper confidence bounds
+        for (int i = 0; i < node->edges.size(); i++) {
             C_Edge* edge = node->edges[i];
             boost::multiprecision::cpp_dec_float_50 score = edge->upper_confidence_bound(noise[i]);
-            if(score > best_score){
+            if (score > best_score) {
                 best_edge = edge;
                 best_score = score;
             }
         }
-
-        if(best_edge == NULL){
+        // check
+        if (best_edge == NULL) {
             assert(0);
         }
 
         this->game_path.push_back(best_edge);
-
-        return best_edge->output_node;
+        node = best_edge->output_node;
+        return node;
     }
-
     return NULL;
 }
+
 
 void C_MCTS::map_valid_move(boost::python::object move){
 	boost::python::object from_square = move.attr("from_square");
@@ -234,15 +251,14 @@ void C_MCTS::map_valid_move(boost::python::object move){
 	this->outputs.push_back({move, plane_index, row, col});
 }
 
-// TODO : Need suggestions of how to implement probabilities to actions
-
 C_Node* C_MCTS::expand(C_Node* leaf){
-	// boost::python::object chess = boost::python::import("chess");
-	// boost::python::object board = chess.attr("Board")(leaf->state);
-
-	// boost::python::object possible_actions = boost::python::extract<list>(board.attr("generate_legal_moves")());
-
-	return NULL;
+    //TODO : use map_valid_move()
+    std::vector<boost::python::object> possible_actions = chess_module.attr("(chess.Board()).board.legal_moves")(leaf->state);
+    for (const auto& action : possible_actions) {
+        std::string new_state = leaf->step(action);
+        C_Node* child = new C_Node(new_state);
+        leaf->add_child(child, action, 0.5); // TODO: get prior from agent
+    }
 }
 
 C_Node* C_MCTS::backpropagate(C_Node* end_node, boost::multiprecision::cpp_dec_float_50 value){
