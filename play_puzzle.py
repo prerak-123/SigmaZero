@@ -9,7 +9,7 @@ from game import Game
 from chess import Move
 
 CSV_FILE = "puzzles.csv"
-N = 2
+N = 5
 
 curr_index = 0
 lock = threading.Lock()

@@ -12,15 +12,24 @@ import config
 import datetime
 
 class Agent:
-    def __init__(self,local_preds:bool = False, model_path:str|None = None,state:str = chess.STARTING_FEN):
+    def __init__(self,local_preds:bool = False, model_path:str|None = None,state:str = chess.STARTING_FEN, device=None):
         """
         An agent is an object that can play chessmoves on the environment.
         Based on the parameters, it can play with a local model, or send its input to a server.
         It holds an MCTS object that is used to run MCTS simulations to build a tree.
         """
+
+        self.device = device
+        
+        if device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        print(torch.cuda.is_available())
+        print(f"Using device {self.device}")
+
         self.local_preds = local_preds
         if local_preds:
-            self.model = AgentNetwork(input_channels = config.IN_CHANNELS, num_hidden_blocks = config.NUM_BLOCKS)
+            self.model = AgentNetwork(input_channels = config.IN_CHANNELS, num_hidden_blocks = config.NUM_BLOCKS).to(self.device)
             if model_path is not None:
                 self.model.load_state_dict(torch.load(model_path))
         else :
@@ -46,7 +55,7 @@ class Agent:
         return model_path
             
     def predict(self, data:torch.Tensor):
-        data = torch.Tensor(data).to(torch.float32).unsqueeze(0)
+        data = torch.Tensor(data).to(torch.float32).unsqueeze(0).to(self.device)
         # print(data.shape)
         # print("in agent predict")
         if self.local_preds:
@@ -59,7 +68,7 @@ class Agent:
         
         with torch.no_grad():
             v, p = self.model(data)
-            return p, v.item()
+            return p.cpu(), v.cpu().item()
 
     def predict_server(self,data:torch.Tensor):
         raise NotImplementedError("Server predictions not implemented yet")

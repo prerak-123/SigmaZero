@@ -117,6 +117,9 @@ C_Node::C_Node(std::string state){
     this->state = state;
     this->N = 0;
     this->value = 0;
+    boost::python::object chess = boost::python::import("chess");
+    boost::python::object board = chess.attr("Board")(this->state);
+    this->turn = boost::python::extract<bool>(board.attr("turn"));
 }
 
 std::string C_Node::step(boost::python::object action){
@@ -268,7 +271,7 @@ uint64_t C_MCTS::select_child(C_Node* node){
 
         this->game_path.push_back(best_edge);
 
-        return (uint64_t)best_edge->output_node;
+        node = best_edge->output_node;
     }
 
     return (uint64_t)node;
@@ -286,7 +289,8 @@ void C_MCTS::map_valid_move(boost::python::object move){
     int to = boost::python::extract<int>(to_square);
 
 	if(boost::python::extract<bool>(move.attr("promotion")) && boost::python::extract<bool>(move.attr("promotion") != chess.attr("QUEEN"))){
-	    boost::python::object x = Mapping.attr("get_underpromotion_move")(boost::python::extract<bool>(move.attr("promotion")), from, to);
+        int prom = boost::python::extract<int>(move.attr("promotion"));
+	    boost::python::object x = Mapping.attr("get_underpromotion_move")(prom, from, to);
 		
 		plane_index = Mapping.attr("mapper")[x[0]][1-x[1]];
 	}
@@ -349,7 +353,10 @@ uint64_t C_MCTS::expand(C_Node* leaf){
 	int num = boost::python::extract<int>(num_valid_moves);
 
 	if(num == 0){
-		boost::python::object outcome = board.attr("outcome")(true);
+        boost::python::dict options;
+        options["claim_draw"] = true;
+
+		boost::python::object outcome = board.attr("outcome")(*boost::python::tuple(), **options);
 
 		if(outcome.is_none()){
 			leaf->value = 0;

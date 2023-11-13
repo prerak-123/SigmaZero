@@ -128,11 +128,3 @@ mapper = {
     UnderPromotion.BISHOP: [67, 68, 69],
     UnderPromotion.ROOK: [70, 71, 72]
 }
-
-def upper_confidence_bound(self, noise: float, W, N) -> float:
-        exploration_rate = math.log((1 + self.input_node.N + config.C_base) / config.C_base) + config.C_init
-        ucb = exploration_rate * (self.P * noise) * (math.sqrt(self.input_node.N) / (1 + self.N))
-        if self.input_node.turn == chess.WHITE:
-            return W / (N + 1) + ucb 
-        else:
-            return -(self.W / (N + 1)) + ucb
