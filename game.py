@@ -47,10 +47,8 @@ class Game:
         # counter to check amount of moves played. if above limit, estimate winner
         counter, previous_edges, full_game = 0, (None, None), True
         while not self.env.board.is_game_over():
-            # print("1Hii!")
             # play one move (previous move is used for updating the MCTS tree)
             previous_edges = self.play_move(stochastic=stochastic, previous_moves=previous_edges)
-            # print("2Hii!")
 
             # end if the game drags on too long
             counter += 1
@@ -65,7 +63,6 @@ class Game:
         # save game result to memory for all games
         for index, element in enumerate(self.memory[-1]):
             self.memory[-1][index] = (element[0], element[1], winner)
-
         self.save_game(name="game", full_game=full_game)
 
         return winner
@@ -85,31 +82,13 @@ class Game:
         node found after playing the previous moves in the current tree.
         """
         # whose turn is it
-        # print("1Welcome!")
         current_player = self.white if self.turn else self.black
 
         if previous_moves[0] is None or previous_moves[1] is None:
             # create new tree with root node == current board
-            # print("brudah here!")
             current_player.mcts = MCTS(current_player, self.env.board.fen(), stochastic)
         else:
-        #     # change the root node to the node after playing the two previous moves
-        #     try:
-        #         node = current_player.mcts.root.get_edge(previous_moves[0].action).output_node
-        #         node = node.get_edge(previous_moves[1].action).output_node
-        #         current_player.mcts.root = node
-        #     except AttributeError:
-        #         current_player.mcts = MCTS(current_player, state=self.env.board.fen(), stochastic=stochastic)
-        #     if(current_player.mcts.root.has_edge(previous_moves[0].action)):
-        #         node = node.get_edge(previous_moves[0].action).output_node
-        #         if(node.has_edge(previous_moves[1].action)):
-        #             node = node.get_edge(previous_moves[1].action).output_node
-        #             current_player.mcts.root = node
-        #             make_new = False
-        # # play n simulations from the root node
-        #     if make_new:
-        #         current_player.mcts = MCTS(current_player, state=self.env.board.fen(), stochastic=stochastic)
-            # print("2 brudah here!")
+            # change the root node to the node after playing the two previous moves
             if not current_player.mcts.move_root(previous_moves[0].item(), previous_moves[1].item()):
                 current_player.mcts = MCTS(current_player, self.env.board.fen(), stochastic)
 

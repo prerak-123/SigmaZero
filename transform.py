@@ -2,7 +2,7 @@ import chess
 import torch
 
 
-def board_to_input(board: chess.Board):
+def board_to_input(board: chess.Board)->torch.Tensor:
     """
     Coverts the given board position into the planes 
     required as input for the neural network.
