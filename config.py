@@ -15,3 +15,4 @@ LEARNING_RATE = 0.2 #Decay to 0.02, 0.002....?
 IMAGES = "./images/"
 MODEL = "./models/"
 MEMORY = "./memory/"
+PUZZLE = "./puzzles/"
