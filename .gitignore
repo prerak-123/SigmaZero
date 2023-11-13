@@ -1,7 +1,6 @@
 .gitignore
 .vscode
 *.out
-*.so
 test.*
 copied-code-for-CPP-backend
 mcts
