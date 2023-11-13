@@ -6,3 +6,4 @@ test.*
 copied-code-for-CPP-backend
 mcts
 __pycache__
+memory

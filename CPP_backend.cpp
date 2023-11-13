@@ -96,8 +96,16 @@ class C_MCTS{
 
 
 void delete_mcts_tree(C_Node* node){
+
+    if(! node) return;
+
     for(int i=0; i < node->edges.size(); ++i){
+
+        if(! node->edges[i]) continue;
+
         delete_mcts_tree(node->edges[i]->output_node);
+        delete node->edges[i];
+        node->edges[i] = NULL;
     }
 
     delete node;
