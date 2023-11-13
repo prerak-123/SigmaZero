@@ -10,6 +10,8 @@
 #include <string>
 #include <functional>
 #include <iostream>
+#include <cmath>
+#include<unordered_map>
 
 long long int cnt = 0;
 
@@ -19,6 +21,19 @@ long long int cnt = 0;
 #define DIRICHLET_NOISE 0.3
 #define C_BASE 20000
 #define C_INIT 2
+
+typedef boost::python::object P_Action;
+typedef boost::python::object P_Agent;
+typedef boost::python::object P_List; 
+typedef boost::python::object P_Array;
+typedef boost::python::object P_Generator;
+typedef boost::python::object P_Board;
+typedef boost::python::object P_Move;
+// #define P_Action boost::python::object
+// #define P_Agent boost::python::object
+// #define P_List boost::python::object
+// #define P_Board boost::python::object
+// #define P_Move boost::python::object
 
 class C_Node;
 class C_Edge;
@@ -35,62 +50,60 @@ class C_Node{
 
         C_Node();
         C_Node(std::string state);
-        std::string step(boost::python::object action);
+        std::string step(P_Action action);
         bool is_game_over();
         bool is_leaf();
-        uint64_t add_child(C_Node* child, boost::python::object action, long double prior);
+        uint64_t add_child(C_Node* child, P_Action action, long double prior);
         std::vector<C_Node*> get_all_children();
         void get_all_children_helper(std::vector<C_Node*> &children);
-        uint64_t get_edge(boost::python::object action);
+        uint64_t get_edge(P_Action action);
 };
 
 class C_Edge{   
     public:
         C_Node* input_node;
         C_Node* output_node;
-        boost::python::object action;
+        P_Action action;
 
         bool player_turn;
 
         uint64_t N;
-        long double W;
+        uint64_t W;
         long double P;
 
         C_Edge();
-        C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object action, long double prior);
+        C_Edge(C_Node* input_node, C_Node* output_node, P_Action action, long double prior);
 		long double upper_confidence_bound(long double noise);
         std::string get_action_uci();
         uint64_t get_N();
 };
 
-// class C_Action{
 
-// }
 
 class C_MCTS{
     public:
         C_Node* root;
         std::vector<C_Edge*> game_path;
-        boost::python::object cur_board;
-		boost::python::object agent;
+        P_Board cur_board;
+		P_Agent agent;
 		bool stochastic;
 		std::vector<std::vector<boost::python::object>> outputs;
 
         void run_simulations(int n);
         uint64_t select_child(C_Node* node);
-        void map_valid_move(boost::python::object move);
-        std::unordered_map<std::string, long double> probabilities_to_actions(boost::python::object probabilities, std::string board); 
+        void map_valid_move(P_Move move);
+        std::unordered_map<std::string, long double> probabilities_to_actions(P_Array& probabilities, std::string board); 
         uint64_t expand(C_Node* leaf);
         uint64_t backpropagate(C_Node* end_node, long double value);
         bool move_root(uint64_t move0, uint64_t move1);
         uint64_t get_sum_N();
         uint64_t get_edge_N(uint64_t edge);
-        boost::python::object get_all_edges(boost::python::object lst);
-        boost::python::object get_edge_action(uint64_t edge);
+        P_List get_all_edges(P_List lst);
+        P_Action get_edge_action(uint64_t edge);
         std::string get_edge_uci(uint64_t edge);
 
         C_MCTS();
-        C_MCTS(boost::python::object agent, std::string state, bool stochastic = false);
+        C_MCTS(P_Agent agent, std::string state, bool stochastic = false);
         ~C_MCTS();
 };     
 
@@ -111,7 +124,7 @@ C_Node::C_Node(std::string state){
     this->value = 0;
 }
 
-std::string C_Node::step(boost::python::object action){
+std::string C_Node::step(P_Action action){
     boost::python::object chess_module = boost::python::import("chess");
     boost::python::object board = chess_module.attr("Board")(this->state);
     board.attr("push")(action);
@@ -132,7 +145,7 @@ bool C_Node::is_leaf(){
     return this->N == 0;
 }
 
-uint64_t C_Node::add_child(C_Node* child, boost::python::object action, long double prior){
+uint64_t C_Node::add_child(C_Node* child, P_Action action, long double prior){
     C_Edge* edge = new C_Edge(this, child, action, prior);
     this->edges.push_back(edge);
     return (uint64_t)edge;
@@ -152,7 +165,7 @@ void C_Node::get_all_children_helper(std::vector<C_Node*> &children){
     }
 }
 
-uint64_t C_Node::get_edge(boost::python::object action){
+uint64_t C_Node::get_edge(P_Action action){
     for (int i = 0; i < this->edges.size(); i++){
         if (boost::python::extract<bool>(action == this->edges[i]->action)){
             return (uint64_t)this->edges[i];
@@ -163,7 +176,7 @@ uint64_t C_Node::get_edge(boost::python::object action){
 
 C_Edge::C_Edge(){}
 
-C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, boost::python::object action, long double prior){
+C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, P_Action action, long double prior){
     this->input_node = input_node;
     this->output_node = output_node;
     this->action = action;
@@ -188,12 +201,9 @@ uint64_t C_Edge::get_N(){
 }
 
 long double C_Edge::upper_confidence_bound(long double noise){
-    boost::python::object math = boost::python::import("math");
-    boost::python::object log = math.attr("log");
-    boost::python::object sqrt = math.attr("sqrt");
 
-    long double exploration_rate = boost::python::extract<long double>(log((long double)(1 + this->input_node->N + C_BASE) / C_BASE)) + C_INIT;
-    long double ucb = exploration_rate * (this->P * noise) * (boost::python::extract<long double>(sqrt((this->input_node->N))) / (1 + this->N));
+    long double exploration_rate = std::log((long double)(1 + this->input_node->N + C_BASE) / C_BASE) + C_INIT;
+    long double ucb = exploration_rate * (this->P * noise) * (std::sqrt((this->input_node->N)) / (1 + this->N));
 
     if(this->input_node->turn){
         long double ret =  (long double)(this->W) / (this->N + 1) + ucb;
@@ -207,7 +217,7 @@ long double C_Edge::upper_confidence_bound(long double noise){
 
 C_MCTS::C_MCTS(){}
 
-C_MCTS::C_MCTS(boost::python::object agent, std::string state, bool stochastic){
+C_MCTS::C_MCTS(P_Agent agent, std::string state, bool stochastic){
     this->root = new C_Node(state);
     this->agent = agent;
     this->stochastic = stochastic;
@@ -234,13 +244,16 @@ uint64_t C_MCTS::select_child(C_Node* node){
         }
 
         boost::python::object numpy = boost::python::import("numpy");
-        boost::python::object dirichlet_noise = numpy.attr("ones")(node->edges.size());
+        P_Array dirichlet_noise = numpy.attr("ones")(node->edges.size());
 
         if(this->stochastic && node->state == this->root->state){
             boost::python::object dirichlet = numpy.attr("random").attr("dirichlet");
-            boost::python::object arr = numpy.attr("full")(node->edges.size(), DIRICHLET_NOISE);
+            P_Array arr = numpy.attr("full")(node->edges.size(), DIRICHLET_NOISE);
             dirichlet_noise = dirichlet(arr);
         }
+        // else{
+        //     dirichlet_noise = numpy.attr("ones")(node->edges.size());
+        // }
 
         C_Edge* best_edge = NULL;
         long double best_score = -1e10;
@@ -304,11 +317,11 @@ void C_MCTS::map_valid_move(boost::python::object move){
 
 // TODO : Need suggestions of how to implement probabilities to actions
 
-std::unordered_map<std::string, long double> C_MCTS::probabilities_to_actions(boost::python::object probabilities, std::string bord){
+std::unordered_map<std::string, long double> C_MCTS::probabilities_to_actions(P_List& probabilities, std::string bord){
 	std::unordered_map <std::string, long double> actions;
 	boost::python::object chess = boost::python::import("chess");
 	this->cur_board = chess.attr("Board")(bord);
-	boost::python::object valid_moves = this->cur_board.attr("generate_legal_moves")();
+	P_Generator valid_moves = this->cur_board.attr("generate_legal_moves")();
 
 	this->outputs = std::vector<std::vector<boost::python::object>> ();
 	boost::python::object num_valid_moves = this->cur_board.attr("legal_moves").attr("count")();
@@ -336,7 +349,7 @@ uint64_t C_MCTS::expand(C_Node* leaf){
 	boost::python::object chess = boost::python::import("chess");
 	boost::python::object board = chess.attr("Board")(leaf->state);
 
-	boost::python::object possible_actions = board.attr("generate_legal_moves")();
+	P_Generator possible_actions = board.attr("generate_legal_moves")();
 	boost::python::object num_valid_moves = board.attr("legal_moves").attr("count")();
 	int num = boost::python::extract<int>(num_valid_moves);
 
@@ -367,14 +380,15 @@ uint64_t C_MCTS::expand(C_Node* leaf){
 	boost::python::object p = probabilities[0];
 	boost::python::object v = probabilities[1];
 
-	std::unordered_map<std::string, long double> actions = probabilities_to_actions(p.attr("numpy")().attr("flatten")(), leaf->state);
+    P_Array ps = p.attr("numpy")().attr("flatten")();
+	std::unordered_map<std::string, long double> actions = probabilities_to_actions(ps, leaf->state);
 
 	long double val = boost::python::extract<long double>(v);
     leaf->value = val;
 
     
 	for(int i=0; i<num; ++i){
-		boost::python::object move = possible_actions.attr("__next__")();
+		P_Move move = possible_actions.attr("__next__")();
 		std::string new_state = leaf->step(move);
 		C_Node* child = new C_Node(new_state);
         std::string key = boost::python::extract<std::string>(move.attr("uci")());
@@ -395,8 +409,8 @@ uint64_t C_MCTS::backpropagate(C_Node* end_node, long double value){
 }
 
 bool C_MCTS::move_root(uint64_t move0, uint64_t move1){
-    boost::python::object action0 = ((C_Edge*)move0)->action;
-    boost::python::object action1 = ((C_Edge*)move1)->action;
+    P_Action action0 = ((C_Edge*)move0)->action;
+    P_Action action1 = ((C_Edge*)move1)->action;
     std::string uci0 = boost::python::extract<std::string>(action0.attr("uci")());
     std::string uci1 = boost::python::extract<std::string>(action1.attr("uci")());
     
@@ -453,7 +467,7 @@ uint64_t C_MCTS::get_edge_N(uint64_t edge){
     return ((C_Edge*)edge)->N;
 }
 
-boost::python::object C_MCTS::get_all_edges(boost::python::object lst){
+P_List C_MCTS::get_all_edges(P_List lst){
     for(int i=0; i < root->edges.size(); ++i){
         lst.attr("append")((uint64_t)root->edges[i]);
     }
@@ -461,7 +475,7 @@ boost::python::object C_MCTS::get_all_edges(boost::python::object lst){
     return lst;
 }
 
-boost::python::object C_MCTS::get_edge_action(uint64_t edge){
+P_Action C_MCTS::get_edge_action(uint64_t edge){
     return ((C_Edge*)edge)->action;
 }
 
@@ -485,13 +499,13 @@ BOOST_PYTHON_MODULE(CPP_backend)
 
     boost::python::class_ <C_Edge>("Edge")
         .def(boost::python::init<>())
-        .def(boost::python::init<C_Node*, C_Node*, boost::python::object, long double>())
+        .def(boost::python::init<C_Node*, C_Node*, P_Action, long double>())
         .def("upper_confidence_bound", &C_Edge::upper_confidence_bound)
         ;
 
     boost::python::class_ <C_MCTS>("MCTS")
         .def(boost::python::init<>())
-        .def(boost::python::init<boost::python::object, std::string, bool>())
+        .def(boost::python::init<P_Agent, std::string, bool>())
         .def("run_simulations", &C_MCTS::run_simulations)
         .def("move_root", &C_MCTS::move_root)
         .def("get_sum_N", &C_MCTS::get_sum_N)
@@ -500,5 +514,6 @@ BOOST_PYTHON_MODULE(CPP_backend)
         .def("get_edge_action", &C_MCTS::get_edge_action)
         .def("get_edge_uci", &C_MCTS::get_edge_uci)
         ;
+    Py_Finalize();
 }
 
