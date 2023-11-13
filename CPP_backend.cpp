@@ -522,6 +522,6 @@ BOOST_PYTHON_MODULE(CPP_backend)
         .def("get_edge_action", &C_MCTS::get_edge_action)
         .def("get_edge_uci", &C_MCTS::get_edge_uci)
         ;
-    Py_Finalize();
+
 }
 
