@@ -165,7 +165,7 @@ class ChessEnv:
     def reset(self):
         self.board = chess.Board(self.fen)
         
-    def action(self, action: Move) -> chess.Board:
+    def step(self, action: Move) -> chess.Board:
         '''Perform the given move on the board and return an updated board'''
         self.board.push(action)
         return self.board

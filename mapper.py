@@ -1,10 +1,10 @@
-from enum import Enum
+from enum import IntEnum
 from typing import Tuple
 from chess import PieceType
 import numpy as np
+import config
 
-
-class QueenDirection(Enum):
+class QueenDirection(IntEnum):
     # eight directions
     NORTHWEST = 0
     NORTH = 1
@@ -16,22 +16,22 @@ class QueenDirection(Enum):
     WEST = 7
 
 
-class KnightMove(Enum):
+class KnightMove(IntEnum):
     # eight possible knight moves
-    NORTH_LEFT = 0  # diff == -15
-    NORTH_RIGHT = 1  # diff == -17
-    EAST_UP = 2  # diff == -6
-    EAST_DOWN = 3  # diff == 10
-    SOUTH_RIGHT = 4  # diff == 15
-    SOUTH_LEFT = 5  # diff == 17
-    WEST_DOWN = 6  # diff == 6
-    WEST_UP = 7  # diff == -10
+    NORTH_LEFT = 8  # diff == -15
+    NORTH_RIGHT = 9  # diff == -17
+    EAST_UP = 10  # diff == -6
+    EAST_DOWN = 11  # diff == 10
+    SOUTH_RIGHT = 12  # diff == 15
+    SOUTH_LEFT = 13  # diff == 17
+    WEST_DOWN = 14  # diff == 6
+    WEST_UP = 15  # diff == -10
 
 
-class UnderPromotion(Enum):
-    KNIGHT = 0
-    BISHOP = 1
-    ROOK = 2
+class UnderPromotion(IntEnum):
+    KNIGHT = 16
+    BISHOP = 17
+    ROOK = 18
 
 
     """
@@ -44,14 +44,14 @@ class UnderPromotion(Enum):
 
 knight_mappings = [-15, -17, -6, 10, 15, 17, 6, -10]
 
-def get_index(piece_type: PieceType, direction: Enum, distance: int = 1) -> int:
+def get_index(piece_type: PieceType, direction: IntEnum, distance: int = 1) -> int:
     if piece_type == PieceType.KNIGHT:
-        return 56 + KnightMove(direction).value
+        return 56 + KnightMove(direction + 8).value
     else:
         return QueenDirection(direction) * 8 + distance
 
 def get_underpromotion_move(piece_type: PieceType, from_square: int, to_square: int) -> Tuple[UnderPromotion, int]:
-    piece_type = UnderPromotion(piece_type - 2)
+    piece_type = UnderPromotion(piece_type - 2 + 16)
     diff = from_square - to_square
     if to_square < 8:
         # black promotes (1st rank)
@@ -62,7 +62,8 @@ def get_underpromotion_move(piece_type: PieceType, from_square: int, to_square: 
     return (piece_type, direction)
 
 def get_knight_move(from_square: int, to_square: int) -> KnightMove:
-    return KnightMove(knight_mappings.index(from_square - to_square))
+    # print("in knight move")
+    return KnightMove(knight_mappings.index(from_square - to_square ) + 8)
 
 def get_queenlike_move(from_square: int, to_square: int) -> Tuple[QueenDirection, int]:
     diff = from_square - to_square
@@ -79,23 +80,29 @@ def get_queenlike_move(from_square: int, to_square: int) -> Tuple[QueenDirection
             direction = QueenDirection.SOUTHWEST
         else:
             direction = QueenDirection.NORTHEAST
-        distance = np.abs(int(diff / 8))
+        distance = np.abs(int(diff / 8)).item()
     elif from_square // 8 == to_square // 8:
         # east and west
         if diff > 0:
             direction = QueenDirection.WEST
         else:
             direction = QueenDirection.EAST
-        distance = np.abs(diff)
+        distance = np.abs(diff).item()
     elif diff % 7 == 0:
         if diff > 0:
             direction = QueenDirection.SOUTHEAST
         else:
             direction = QueenDirection.NORTHWEST
-        distance = np.abs(int(diff / 8)) + 1
+        distance = (np.abs(int(diff / 8)) + 1).item()
     else:
         raise Exception("Invalid queen-like move")
-    return (direction, distance)
+    
+    # print(int(direction))
+    # print(type(int(direction)), type(distance))
+    # print(int(direction), distance)
+
+
+    return int(direction), distance
 
 mapper = {
     # queens
@@ -121,3 +128,11 @@ mapper = {
     UnderPromotion.BISHOP: [67, 68, 69],
     UnderPromotion.ROOK: [70, 71, 72]
 }
+
+def upper_confidence_bound(self, noise: float, W, N) -> float:
+        exploration_rate = math.log((1 + self.input_node.N + config.C_base) / config.C_base) + config.C_init
+        ucb = exploration_rate * (self.P * noise) * (math.sqrt(self.input_node.N) / (1 + self.N))
+        if self.input_node.turn == chess.WHITE:
+            return W / (N + 1) + ucb 
+        else:
+            return -(self.W / (N + 1)) + ucb
