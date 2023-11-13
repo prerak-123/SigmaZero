@@ -11,8 +11,6 @@
 #include <functional>
 #include <iostream>
 
-#include<pthread.h>
-
 long long int cnt = 0;
 
 #define ll long long int
@@ -156,16 +154,11 @@ void C_Node::get_all_children_helper(std::vector<C_Node*> &children){
 
 uint64_t C_Node::get_edge(boost::python::object action){
     for (int i = 0; i < this->edges.size(); i++){
-        if (action == this->edges[i]->action){
+        if (boost::python::extract<bool>(action == this->edges[i]->action)){
             return (uint64_t)this->edges[i];
         }
     }	
     return 0;
-}
-
-uint64_t C_Node_Alloter(std::string state){
-    C_Node* node = new C_Node(state);
-    return (uint64_t) node;
 }
 
 C_Edge::C_Edge(){}
@@ -285,7 +278,7 @@ void C_MCTS::map_valid_move(boost::python::object move){
     int to = boost::python::extract<int>(to_square);
 
 	if(boost::python::extract<bool>(move.attr("promotion")) && boost::python::extract<bool>(move.attr("promotion") != chess.attr("QUEEN"))){
-	    boost::python::object x = Mapping.attr("get_underpromotion_move")(move.attr("promotion"), from, to);
+	    boost::python::object x = Mapping.attr("get_underpromotion_move")(boost::python::extract<bool>(move.attr("promotion")), from, to);
 		
 		plane_index = Mapping.attr("mapper")[x[0]][1-x[1]];
 	}
@@ -354,10 +347,10 @@ uint64_t C_MCTS::expand(C_Node* leaf){
 			leaf->value = 0;
 		}
 		else{
-			if(outcome.attr("winner") == chess.attr("WHITE")){
+			if(boost::python::extract<bool>(outcome.attr("winner") == chess.attr("WHITE"))){
 				leaf->value = 1;
 			}
-			else if(outcome.attr("winner") == chess.attr("BLACK")){
+			else if(boost::python::extract<bool>(outcome.attr("winner") == chess.attr("BLACK"))){
 				leaf->value = -1;
 			}
 			else{
