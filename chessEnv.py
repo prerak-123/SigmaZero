@@ -172,3 +172,24 @@ class ChessEnv:
 
     def __str__(self):
         return str(self.board)
+    
+    def to_input_state(self): ## this will be changed
+        return state_to_input(str(self.board))
+
+class ChessEnvMCTS:
+    def __init__(self,fen:str = chess.STARTING_FEN):
+        self.state_board = chess.Board(fen)
+        
+    def reset(self):
+        self.board = self.state_board.copy()
+        
+    def step(self, action: Move) -> chess.Board:
+        '''Perform the given move on the board and return an updated board'''
+        self.board.push(action)
+        return self.board
+    def update(self,action:Move):
+        self.state_board.push(action)
+    def __str__(self):
+        return str(self.board)
+    def to_input_state(self): ## this will be changed
+        return state_to_input(str(self.board))

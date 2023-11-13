@@ -21,6 +21,8 @@ long long int cnt = 0;
 #define DIRICHLET_NOISE 0.3
 #define C_BASE 20000
 #define C_INIT 2
+#define chess_WHITE true
+#define chess_BLACK false
 
 typedef boost::python::object P_Action;
 typedef boost::python::object P_Agent;
@@ -28,35 +30,31 @@ typedef boost::python::object P_List;
 typedef boost::python::object P_Array;
 typedef boost::python::object P_Generator;
 typedef boost::python::object P_Board;
+typedef boost::python::object P_Env;
 typedef boost::python::object P_Move;
-// #define P_Action boost::python::object
-// #define P_Agent boost::python::object
-// #define P_List boost::python::object
-// #define P_Board boost::python::object
-// #define P_Move boost::python::object
+
 
 class C_Node;
 class C_Edge;
 class C_MCTS;
-class C_Edge;
 
 class C_Node{
     public:
-        std::string state;
+        // std::string state;
         int turn;
         std::vector<C_Edge*> edges;
         long long int N;
         long double value;
 
         C_Node();
-        C_Node(std::string state);
-        std::string step(P_Action action);
-        bool is_game_over();
+        // C_Node(std::string state);
+        // std::string step(P_Action action,P_Board& board);
+        // bool is_game_over();
         bool is_leaf();
-        uint64_t add_child(C_Node* child, P_Action action, long double prior);
+        uint64_t add_child(C_Node* child, P_Action& action, long double prior, P_Board board);
         std::vector<C_Node*> get_all_children();
         void get_all_children_helper(std::vector<C_Node*> &children);
-        uint64_t get_edge(P_Action action);
+        uint64_t get_edge(P_Action& action);
 };
 
 class C_Edge{   
@@ -72,7 +70,7 @@ class C_Edge{
         long double P;
 
         C_Edge();
-        C_Edge(C_Node* input_node, C_Node* output_node, P_Action action, long double prior);
+        C_Edge(C_Node* input_node, C_Node* output_node, P_Action& action, long double prior, P_Board& board);
 		long double upper_confidence_bound(long double noise);
         std::string get_action_uci();
         uint64_t get_N();
@@ -84,26 +82,27 @@ class C_MCTS{
     public:
         C_Node* root;
         std::vector<C_Edge*> game_path;
-        P_Board cur_board;
+        // P_Board cur_board;
+        P_Env play_env;
 		P_Agent agent;
 		bool stochastic;
 		std::vector<std::vector<boost::python::object>> outputs;
 
         void run_simulations(int n);
         uint64_t select_child(C_Node* node);
-        void map_valid_move(P_Move move);
-        std::unordered_map<std::string, long double> probabilities_to_actions(P_Array& probabilities, std::string board); 
+        void map_valid_move(P_Move& move);
+        std::unordered_map<std::string, long double> probabilities_to_actions(P_Array& probabilities); 
         uint64_t expand(C_Node* leaf);
         uint64_t backpropagate(C_Node* end_node, long double value);
         bool move_root(uint64_t move0, uint64_t move1);
         uint64_t get_sum_N();
         uint64_t get_edge_N(uint64_t edge);
-        P_List get_all_edges(P_List lst);
-        P_Action get_edge_action(uint64_t edge);
+        P_List get_all_edges(P_List& lst);
+        P_Action& get_edge_action(uint64_t edge);
         std::string get_edge_uci(uint64_t edge);
 
         C_MCTS();
-        C_MCTS(P_Agent agent, std::string state, bool stochastic = false);
+        C_MCTS(P_Agent& agent, std::string state, bool stochastic = false);
         ~C_MCTS();
 };     
 
@@ -124,37 +123,38 @@ void delete_mcts_tree(C_Node* node){
     delete node;
 }
 
-C_Node::C_Node(){}
-
-C_Node::C_Node(std::string state){
-    this->state = state;
+C_Node::C_Node(){
     this->N = 0;
     this->value = 0;
 }
 
-std::string C_Node::step(P_Action action){
-    boost::python::object chess_module = boost::python::import("chess");
-    boost::python::object board = chess_module.attr("Board")(this->state);
-    board.attr("push")(action);
-    std::string new_state = boost::python::extract<std::string>(board.attr("fen")());
-    return new_state;    
-}
+// C_Node::C_Node(std::string state){
+//     this->state = state;
+//     this->N = 0;
+//     this->value = 0;
+// }
 
-bool C_Node::is_game_over(){
-    // Py_Initialize();
-    boost::python::object chess_module = boost::python::import("chess");
-    boost::python::object board = chess_module.attr("Board")(this->state);
-    bool is_game_over = boost::python::extract<bool>(board.attr("is_game_over")());
-    // Py_Finalize();
-    return is_game_over;
-}
+// std::string C_Node::step(P_Action action, P_Board& board){
+//     board.attr("push")(action);
+//     std::string new_state = boost::python::extract<std::string>(board.attr("fen")());
+//     return new_state;    
+// }
+
+// bool C_Node::is_game_over(){
+//     // Py_Initialize();
+//     boost::python::object chess_module = boost::python::import("chess");
+//     boost::python::object board = chess_module.attr("Board")(this->state);
+//     bool is_game_over = boost::python::extract<bool>(board.attr("is_game_over")());
+//     // Py_Finalize();
+//     return is_game_over;
+// }
 
 bool C_Node::is_leaf(){
     return this->N == 0;
 }
 
-uint64_t C_Node::add_child(C_Node* child, P_Action action, long double prior){
-    C_Edge* edge = new C_Edge(this, child, action, prior);
+uint64_t C_Node::add_child(C_Node* child, P_Action& action, long double prior, P_Board board){
+    C_Edge* edge = new C_Edge(this, child, action, prior, board);
     this->edges.push_back(edge);
     return (uint64_t)edge;
 }
@@ -173,7 +173,7 @@ void C_Node::get_all_children_helper(std::vector<C_Node*> &children){
     }
 }
 
-uint64_t C_Node::get_edge(P_Action action){
+uint64_t C_Node::get_edge(P_Action& action){
     for (int i = 0; i < this->edges.size(); i++){
         if (boost::python::extract<bool>(action == this->edges[i]->action)){
             return (uint64_t)this->edges[i];
@@ -184,16 +184,13 @@ uint64_t C_Node::get_edge(P_Action action){
 
 C_Edge::C_Edge(){}
 
-C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, P_Action action, long double prior){
+//assume we are at input_node, and we want to go to output_node
+C_Edge::C_Edge(C_Node* input_node, C_Node* output_node, P_Action& action, long double prior, P_Board& board){
     this->input_node = input_node;
     this->output_node = output_node;
     this->action = action;
 
-    std::string temp = input_node->state;
-    int end = temp.find(" ");
-    temp.erase(temp.begin(), temp.begin() + end + 1);
-    end = temp.find(" ");
-    this->player_turn = temp.substr(0, end) == "w";
+    this->player_turn = boost::python::extract<bool>(board.attr("turn")());
 
     this->N = 0;
     this->W = 0;
@@ -225,10 +222,12 @@ long double C_Edge::upper_confidence_bound(long double noise){
 
 C_MCTS::C_MCTS(){}
 
-C_MCTS::C_MCTS(P_Agent agent, std::string state, bool stochastic){
-    this->root = new C_Node(state);
+C_MCTS::C_MCTS(P_Agent& agent, std::string state, bool stochastic){
+    // this->root = new C_Node(state);
+    this->root = new C_Node();
     this->agent = agent;
     this->stochastic = stochastic;
+    this->play_env = boost::python::import("ChessEnv").attr("ChessEnvMCTS")(state);
 }
 
 C_MCTS::~C_MCTS(){
@@ -237,9 +236,13 @@ C_MCTS::~C_MCTS(){
 
 void C_MCTS::run_simulations(int n){
     for(int i=0; i<n; ++i){
+        this->play_env.attr("reset")();
         this->game_path = std::vector<C_Edge*> ();
+        // select_child will change the board
         C_Node* leaf = (C_Node*)select_child(root);
         leaf->N += 1;
+        // if dont worry about history, just
+        // play_env.attr("board").attr("set_fen")(leaf->state);
         leaf = (C_Node*)expand(leaf);
         leaf = (C_Node*)backpropagate(leaf, leaf->value);
     }
@@ -254,7 +257,8 @@ uint64_t C_MCTS::select_child(C_Node* node){
         boost::python::object numpy = boost::python::import("numpy");
         P_Array dirichlet_noise = numpy.attr("ones")(node->edges.size());
 
-        if(this->stochastic && node->state == this->root->state){
+        // if(this->stochastic && node->state == this->root->state){
+        if(this->stochastic && node == this->root){
             boost::python::object dirichlet = numpy.attr("random").attr("dirichlet");
             P_Array arr = numpy.attr("full")(node->edges.size(), DIRICHLET_NOISE);
             dirichlet_noise = dirichlet(arr);
@@ -278,7 +282,7 @@ uint64_t C_MCTS::select_child(C_Node* node){
         if(best_edge == NULL){
             assert(0);
         }
-
+        this->play_env.attr("step")(best_edge->action);
         this->game_path.push_back(best_edge);
 
         return (uint64_t)best_edge->output_node;
@@ -287,12 +291,12 @@ uint64_t C_MCTS::select_child(C_Node* node){
     return (uint64_t)node;
 }
 
-void C_MCTS::map_valid_move(boost::python::object move){
+void C_MCTS::map_valid_move(P_Move& move){
 	boost::python::object from_square = move.attr("from_square");
 	boost::python::object to_square = move.attr("to_square");
 	boost::python::object chess = boost::python::import("chess");
 	boost::python::object plane_index;
-    boost::python::object piece = this->cur_board.attr("piece_at")(from_square);
+    boost::python::object piece = this->play_env.attr("board").attr("piece_at")(from_square);
 	boost::python::object Mapping = boost::python::import("mapper");
 
     int from = boost::python::extract<int>(from_square);
@@ -325,14 +329,13 @@ void C_MCTS::map_valid_move(boost::python::object move){
 
 // TODO : Need suggestions of how to implement probabilities to actions
 
-std::unordered_map<std::string, long double> C_MCTS::probabilities_to_actions(P_List& probabilities, std::string bord){
+std::unordered_map<std::string, long double> C_MCTS::probabilities_to_actions(P_List& probabilities){
 	std::unordered_map <std::string, long double> actions;
-	boost::python::object chess = boost::python::import("chess");
-	this->cur_board = chess.attr("Board")(bord);
-	P_Generator valid_moves = this->cur_board.attr("generate_legal_moves")();
+    P_Board board = this->play_env.attr("board");
+	P_Generator valid_moves = board.attr("generate_legal_moves")();
 
 	this->outputs = std::vector<std::vector<boost::python::object>> ();
-	boost::python::object num_valid_moves = this->cur_board.attr("legal_moves").attr("count")();
+	boost::python::object num_valid_moves = board.attr("legal_moves").attr("count")();
 	int num = boost::python::extract<int>(num_valid_moves);
 
 	for(int i=0; i<num; i++){
@@ -354,24 +357,22 @@ std::unordered_map<std::string, long double> C_MCTS::probabilities_to_actions(P_
 
 
 uint64_t C_MCTS::expand(C_Node* leaf){
-	boost::python::object chess = boost::python::import("chess");
-	boost::python::object board = chess.attr("Board")(leaf->state);
-
-	P_Generator possible_actions = board.attr("generate_legal_moves")();
-	boost::python::object num_valid_moves = board.attr("legal_moves").attr("count")();
+    P_Board brd = this->play_env.attr("board");
+	P_Generator possible_actions = brd.attr("generate_legal_moves")();
+	boost::python::object num_valid_moves = brd.attr("legal_moves").attr("count")();
 	int num = boost::python::extract<int>(num_valid_moves);
 
 	if(num == 0){
-		boost::python::object outcome = board.attr("outcome")(true);
+		boost::python::object outcome = brd.attr("outcome")(true);
 
 		if(outcome.is_none()){
 			leaf->value = 0;
 		}
 		else{
-			if(boost::python::extract<bool>(outcome.attr("winner") == chess.attr("WHITE"))){
+			if(boost::python::extract<bool>(outcome.attr("winner")) == chess_WHITE){
 				leaf->value = 1;
 			}
-			else if(boost::python::extract<bool>(outcome.attr("winner") == chess.attr("BLACK"))){
+			else if(boost::python::extract<bool>(outcome.attr("winner")) == chess_BLACK){
 				leaf->value = -1;
 			}
 			else{
@@ -381,15 +382,15 @@ uint64_t C_MCTS::expand(C_Node* leaf){
 		return (uint64_t)leaf;
 	}
 
-	boost::python::object ChessEnv = boost::python::import("chessEnv");
-	boost::python::object input_state = ChessEnv.attr("state_to_input")(leaf->state);
+	boost::python::object input_state = this->play_env.attr("to_input_state")();
 
 	boost::python::object probabilities = this->agent.attr("predict")(input_state);
 	boost::python::object p = probabilities[0];
 	boost::python::object v = probabilities[1];
 
     P_Array ps = p.attr("numpy")().attr("flatten")();
-	std::unordered_map<std::string, long double> actions = probabilities_to_actions(ps, leaf->state);
+	// std::unordered_map<std::string, long double> actions = probabilities_to_actions(ps, leaf->state);
+    std::unordered_map<std::string, long double> actions = probabilities_to_actions(ps);
 
 	long double val = boost::python::extract<long double>(v);
     leaf->value = val;
@@ -397,11 +398,14 @@ uint64_t C_MCTS::expand(C_Node* leaf){
     
 	for(int i=0; i<num; ++i){
 		P_Move move = possible_actions.attr("__next__")();
-		std::string new_state = leaf->step(move);
-		C_Node* child = new C_Node(new_state);
+        // // step will change the board, so we pop it later
+		// std::string new_state = leaf->step(move,this->board);
+        // this->play_env.attr("board").attr("pop")();
+		// C_Node* child = new C_Node(new_state);
+        C_Node* child = new C_Node();
         std::string key = boost::python::extract<std::string>(move.attr("uci")());
         long double val = actions[key];
-		uint64_t edge = leaf->add_child(child, move, val);
+		uint64_t edge = leaf->add_child(child, move, val, this->play_env.attr("board"));
 	}
 	return (uint64_t)leaf;
 }
@@ -454,6 +458,8 @@ bool C_MCTS::move_root(uint64_t move0, uint64_t move1){
             }
 
             root = e->edges[i]->output_node;
+            this->play_env.attr("update")(action0);
+            this->play_env.attr("update")(action1);
             return true;
         }
     }
@@ -475,7 +481,7 @@ uint64_t C_MCTS::get_edge_N(uint64_t edge){
     return ((C_Edge*)edge)->N;
 }
 
-P_List C_MCTS::get_all_edges(P_List lst){
+P_List C_MCTS::get_all_edges(P_List& lst){
     for(int i=0; i < root->edges.size(); ++i){
         lst.attr("append")((uint64_t)root->edges[i]);
     }
@@ -483,7 +489,7 @@ P_List C_MCTS::get_all_edges(P_List lst){
     return lst;
 }
 
-P_Action C_MCTS::get_edge_action(uint64_t edge){
+P_Action& C_MCTS::get_edge_action(uint64_t edge){
     return ((C_Edge*)edge)->action;
 }
 
@@ -496,9 +502,9 @@ BOOST_PYTHON_MODULE(CPP_backend)
     Py_Initialize();
     boost::python::class_ <C_Node>("Node")
         .def(boost::python::init<>())
-        .def(boost::python::init<std::string>())
-        .def("step", &C_Node::step)
-        .def("is_game_over", &C_Node::is_game_over)
+        // .def(boost::python::init<std::string>())
+        // .def("step", &C_Node::step)
+        // .def("is_game_over", &C_Node::is_game_over)
         .def("is_leaf", &C_Node::is_leaf)
         .def("add_child", &C_Node::add_child)
         .def("get_all_children", &C_Node::get_all_children)
@@ -507,13 +513,13 @@ BOOST_PYTHON_MODULE(CPP_backend)
 
     boost::python::class_ <C_Edge>("Edge")
         .def(boost::python::init<>())
-        .def(boost::python::init<C_Node*, C_Node*, P_Action, long double>())
+        .def(boost::python::init<C_Node*, C_Node*, P_Action&, long double,P_Board&>())
         .def("upper_confidence_bound", &C_Edge::upper_confidence_bound)
         ;
 
     boost::python::class_ <C_MCTS>("MCTS")
         .def(boost::python::init<>())
-        .def(boost::python::init<P_Agent, std::string, bool>())
+        .def(boost::python::init<P_Agent&, std::string, bool>())
         .def("run_simulations", &C_MCTS::run_simulations)
         .def("move_root", &C_MCTS::move_root)
         .def("get_sum_N", &C_MCTS::get_sum_N)
