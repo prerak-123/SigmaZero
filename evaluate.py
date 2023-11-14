@@ -22,13 +22,13 @@ class Evaluation:
             print(f"Playing {i + 1}/n game")
             game = Game(ChessEnv(), agent_1, agent_2)
             # play deterministally
-            result = game.play_one_game(stochastic=False)
+            result = game.game(stochastic=False, save=False)
             if result == 0: score["draws"] += 1
             elif result == 1: score["model_1"] += 1
             else: score["model_2"] += 1
             # turn around the colors
             game = Game(ChessEnv(), agent_2, agent_1)
-            result = game.play_one_game(stochastic=False)
+            result = game.game(stochastic=False, save=False)
             if result == 0: score["draws"] += 1
             elif result == 1: score["model_2"] += 1
             else: score["model_1"] += 1
