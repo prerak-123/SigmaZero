@@ -34,7 +34,7 @@ class Game:
         self.turn = self.env.board.turn  # True = white, False = black
         
         
-    def game(self, stochastic: bool = True):
+    def game(self, stochastic: bool = True, save=True):
         """
         Play one game from the starting position, and save it to memory.
         Keep playing moves until either the game is over, or it has reached the move limit.
@@ -63,7 +63,8 @@ class Game:
         # save game result to memory for all games
         for index, element in enumerate(self.memory[-1]):
             self.memory[-1][index] = (element[0], element[1], winner)
-        self.save_game(name="game", full_game=full_game)
+        if save:
+            self.save_game(name="game", full_game=full_game)
 
         return winner
         
