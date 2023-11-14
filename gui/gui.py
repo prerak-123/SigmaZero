@@ -6,21 +6,18 @@ import random
 # display size
 X = 800
 Y = 800
-
+# create screen
 scrn = pygame.display.set_mode((X, Y))
 pygame.init()
-
-#basic colours
+# colors
 WHITE = (255, 255, 255)
 GREY = (128, 128, 128)
 YELLOW = (204, 204, 0)
 BLUE = (50, 255, 255)
 BLACK = (0, 0, 0)
-
-#initialise chess board
+# create board object
 b = chess.Board()
-
-#load piece images
+# load images
 pieces = {
     'p': pygame.transform.scale(pygame.image.load('./images/b_pawn.png'), (100, 100)),
     'n': pygame.transform.scale(pygame.image.load('./images/b_knight.png'), (100, 100)),
@@ -36,12 +33,10 @@ pieces = {
     'K': pygame.transform.scale(pygame.image.load('./images/w_king.png'), (100, 100)),
 }
 
-
 def update(scrn,board):
     '''
     updates the screen basis the board class
     '''
-    
     for i in range(64):
         piece = board.piece_at(i)
         if piece == None:
@@ -56,12 +51,8 @@ def update(scrn,board):
 
     pygame.display.flip()
 
-def main(BOARD):
-    '''
-    human vs human game
-    '''
+def chess_hvh(BOARD):
     scrn.fill((222, 184, 136))
-    # name window
     pygame.display.set_caption('Chess')
 
     # variable to be used later
@@ -133,15 +124,12 @@ def main(BOARD):
     pygame.quit()
 
 
-def main_one_agent(BOARD, agent):
+def chess_avh(BOARD, agent):
     '''
     agent vs human game
     '''
     agent_color = random.choice([True, False])
-    print(agent_color)
-    # make background chess.com default color
     scrn.fill((222, 184, 136))
-
     pygame.display.set_caption('Chess')
 
     # variable to be used later
@@ -213,11 +201,8 @@ def main_one_agent(BOARD, agent):
 
     pygame.quit()
 
-def main_two_agent(BOARD,agent1,agent2):
-    '''
-    for agent vs agent game
-    
-    '''
+def chess_ava(BOARD,agent1,agent2):
+
     agent1_color = random.choice([True, False])
     # make background light brown (chess.com default color)
     scrn.fill((222, 184, 136))
@@ -229,7 +214,6 @@ def main_two_agent(BOARD,agent1,agent2):
 
     status = True
     while (status):
-        #update screen
         update(scrn,BOARD)
         
         if BOARD.turn==agent1_color:
@@ -247,13 +231,12 @@ def main_two_agent(BOARD,agent1,agent2):
             # and program both.
             if event.type == pygame.QUIT:
                 status = False
-     
-    # deactivates the pygame library
         if BOARD.outcome() != None:
             print(BOARD.outcome())
             status = False
             print(BOARD)
     pygame.quit()
 
-main(b)
-#main_one_agent(b, agent)
+if __name__ == "__main__":
+    chess_hvh(b)
+    #main_one_agent(b, agent)
