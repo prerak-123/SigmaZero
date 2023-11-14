@@ -43,9 +43,10 @@ class Trainer:
         '''
         
         #TODO: Change the function used here, or modify it
-        X = torch.cat([board_to_input(chess.Board(i[0])) for i in data]).to(torch.float32).to(self.torch_device)
+
+        X = torch.stack( [ board_to_input( chess.Board( i[0] ) ) for i in data ] ).to(torch.float32).to(self.torch_device)
         
-        y_policy = torch.tensor(np.array([moves_to_output_vector(i[1], chess.Board(i[0])) for i in data ])).to(torch.float32).to(self.torch_device)
+        y_policy = torch.tensor(np.array([moves_to_output_vector(i[1], chess.Board(i[0])).flatten() for i in data ])).to(torch.float32).to(self.torch_device)
         
         y_value = torch.tensor([ [ i[2] ] for i in data]).to(torch.float32).to(self.torch_device)
         
@@ -124,4 +125,4 @@ if __name__ == "__main__":
     x, y_val, y_pol = trainer.get_Xy(experiences)
 
     #print non-zero entries of y_pol
-    print(y_pol[y_pol != 0])
+    print(y_pol.shape)
