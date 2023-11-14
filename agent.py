@@ -24,7 +24,6 @@ class Agent:
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        print(torch.cuda.is_available())
         print(f"Using device {self.device}")
 
         self.local_preds = local_preds

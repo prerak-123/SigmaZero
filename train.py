@@ -10,6 +10,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from datetime import datetime
 from neural_network  import AgentNetwork
+from evaluate import Evaluation
 
 from utils import moves_to_output_vector
 import os
@@ -104,9 +105,10 @@ class Trainer:
         plt.savefig(f"{config.IMAGES}loss-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.png")
         
     def save_model(self):
-        model_path = f"{config.MODEL}model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth"
+        model_str = model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth
+        model_path = f"{config.MODEL}{model_str}"
         torch.save(self.model.state_dict(), model_path)    
-        return model_path
+        return model_str
 
 '''
 TODO:
@@ -115,14 +117,34 @@ TODO:
 '''
 
 if __name__ == "__main__":
-    experiences = []
-    #iterate over all files in the config.MEMORY folder
-    for file in os.listdir(config.MEMORY):
-        experiences.extend(np.load(f"./{config.MEMORY}{file}", allow_pickle=True))
+    while(True):
+        experiences = []
+        #iterate over all files in the config.MEMORY folder
+        for file in os.listdir(config.MEMORY):
+            experiences.extend(np.load(f"./{config.MEMORY}{file}", allow_pickle=True))
+        
+        
+        model = AgentNetwork()
+        
+        if len(os.listdir(f"{config.BEST_MODEL}")) != 0:
+            weight_file = os.listdir(f"{config.BEST_MODEL}")[0]
+            model.load_state_dict(torch.load(f"{config.BEST_MODEL}{weight_file}"))
+        
+        trainer = Trainer(model)
+        
+        old_model = trainer.save_model()
+        
+        losses = trainer.train(experiences, config.TRAIN_STEPS)
+        trainer.plot_loss(losses)
+        
+        new_model = trainer.save_model()
+        
+        model_eval = Evaluation(new_model, old_model)
+        
+        results = model_eval.evaluate(config.EVAL_GAMES)
+        
+        if(results["model_1"] > results["model_2"]):
+            os.system(f"cp {config.MODEL}{new_model} {config.BEST_MODEL}best-model.pth")
+        
+        
     
-    trainer = Trainer(model=AgentNetwork())
-
-    x, y_val, y_pol = trainer.get_Xy(experiences)
-
-    #print non-zero entries of y_pol
-    print(y_pol.shape)
