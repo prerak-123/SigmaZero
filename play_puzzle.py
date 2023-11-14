@@ -5,14 +5,11 @@ import threading
 from agent import Agent
 from chessEnv import ChessEnv
 from game import Game
-
+from multiprocessing import Pool
 from chess import Move
 
 CSV_FILE = "puzzles.csv"
 N = 5
-
-curr_index = 0
-lock = threading.Lock()
 
 def play_puzzle(fen, moves):
     white = Agent(local_preds=True)
@@ -25,19 +22,16 @@ def play_puzzle(fen, moves):
     
     game.game()
 
-def thread_func(dataset):
-    global curr_index
-    global lock
-    while(True):
-        with lock:
-            if(curr_index >= len(dataset)):
-                return
-            my_index = curr_index
-            print(f"My Index {my_index}")
-            curr_index += 1
-        fen, moves = dataset["FEN"][my_index], dataset["Moves"][my_index].split()
-        
+def thread_func(i):
+    global dataset
+    if(i >= len(dataset)):
+        return
+    my_index = i
+    while True:
+        print(f"My Index {my_index}")
+        fen, moves = dataset["FEN"][my_index], dataset["Moves"][my_index].split()       
         play_puzzle(fen, moves)
+        my_index += N
         
 
 if __name__ == "__main__":
@@ -45,12 +39,6 @@ if __name__ == "__main__":
     dataset = dataset[["FEN", "Moves", "Rating"]]
     dataset["Rating"] = pd.to_numeric(dataset["Rating"])
     dataset.sort_values(by="Rating", inplace=True)
-    
-    threads = []
-    for i in range(N):
-        t = threading.Thread(target=thread_func, args=(dataset,))
-        threads.append(t)
-        t.start()
-    
-    for t in threads:
-        t.join()
+   
+    with Pool() as p:
+        p.map(thread_func, range(0, N))

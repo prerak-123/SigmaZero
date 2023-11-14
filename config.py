@@ -1,7 +1,7 @@
 BOARD_SIZE = 8
 MAX_MOVES = 75
 PREVIOUS_MOVES = 8
-SIMULATIONS_PER_MOVE = 400
+SIMULATIONS_PER_MOVE = 800
 
 #-----------Model Parameters------------------------
 IN_CHANNELS = 19

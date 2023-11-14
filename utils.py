@@ -43,17 +43,6 @@ import mapper
 #     print(
 #         f"*** Saving to images: {(time.time() - start_time):.6f} seconds ***")
 
-def time_function(func):
-    """
-    Decorator to time a function
-    """
-    def wrap_func(*args, **kwargs):
-        t1 = time.time()
-        result = func(*args, **kwargs)
-        t2 = time.time()
-        print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
-        return result
-    return wrap_func
 
 def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
     """
@@ -63,7 +52,8 @@ def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
     for move in moves:
         plane_index, row, col = move_to_plane_index(move, board)
         vector[plane_index, row, col] = moves[move]
-    return np.asarray(vector)
+
+    return vector
     
 def move_to_plane_index(move: str, board: chess.Board):
     """"

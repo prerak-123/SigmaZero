@@ -134,7 +134,7 @@ class Game:
         # sum_move_visits = sum(e.N for e in moves)
         # create dictionary of moves and their probabilities
         search_probabilities = {
-            mcts.get_edge_action(e).uci: mcts.get_edge_N(e) / sum_move_visits for e in moves}
+            mcts.get_edge_action(e).uci(): mcts.get_edge_N(e) / sum_move_visits for e in moves}
         # winner gets added after game is over
         self.memory[-1].append((state, search_probabilities, None))
 

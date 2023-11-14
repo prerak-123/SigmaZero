@@ -9,6 +9,10 @@ from transform import board_to_input
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from datetime import datetime
+from neural_network  import AgentNetwork
+
+from utils import moves_to_output_vector
+import os
 
 class Trainer:
     
@@ -41,9 +45,9 @@ class Trainer:
         #TODO: Change the function used here, or modify it
         X = torch.cat([board_to_input(chess.Board(i[0])) for i in data]).to(torch.float32).to(self.torch_device)
         
-        y_value = torch.tensor([ [ i[1] ] for i in data]).to(torch.float32).to(self.torch_device)
+        y_policy = torch.tensor(np.array([moves_to_output_vector(i[1], chess.Board(i[0])) for i in data ])).to(torch.float32).to(self.torch_device)
         
-        y_policy = torch.tensor(np.array([i[2] for i in data ])).to(torch.float32).to(self.torch_device)
+        y_value = torch.tensor([ [ i[2] ] for i in data]).to(torch.float32).to(self.torch_device)
         
         return (X, y_value, y_policy)
     
@@ -108,3 +112,16 @@ TODO:
 1. Decide if this file is run individually or called by main.py
 2. Decide on format of storing and restoring experiences
 '''
+
+if __name__ == "__main__":
+    experiences = []
+    #iterate over all files in the config.MEMORY folder
+    for file in os.listdir(config.MEMORY):
+        experiences.extend(np.load(f"./{config.MEMORY}{file}", allow_pickle=True))
+    
+    trainer = Trainer(model=AgentNetwork())
+
+    x, y_val, y_pol = trainer.get_Xy(experiences)
+
+    #print non-zero entries of y_pol
+    print(y_pol[y_pol != 0])
