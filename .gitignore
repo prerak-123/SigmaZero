@@ -7,3 +7,6 @@ mcts
 __pycache__
 memory
 puzzles
+best_model
+images
+models

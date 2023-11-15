@@ -30,7 +30,7 @@ class Trainer:
         self.torch_device = torch_device
         logging.info(f"Training device: {self.torch_device}")  
         
-        self.optimiser = Adam(params=model.parameters(), lr=config.LEARNING_RATE)
+        self.optimiser = Adam(params=self.model.parameters(), lr=config.LEARNING_RATE)
         self.value_loss = nn.MSELoss()
         self.policy_loss = nn.CrossEntropyLoss()
         
@@ -43,7 +43,6 @@ class Trainer:
         A three tuple (X->Tensor of states, y_value->Tensor of winners, y_policy->Tensor of move probabilities on planes)
         '''
         
-        #TODO: Change the function used here, or modify it
 
         X = torch.stack( [ board_to_input( chess.Board( i[0] ) ) for i in data ] ).to(torch.float32).to(self.torch_device)
         
@@ -100,12 +99,13 @@ class Trainer:
         plt.xlabel('Time Stamp')
         plt.ylabel('Loss')
         
-        plt.tight_layout(4)
+        plt.tight_layout()
         
         plt.savefig(f"{config.IMAGES}loss-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.png")
+        plt.clf()
         
     def save_model(self):
-        model_str = model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth
+        model_str = f"model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth"
         model_path = f"{config.MODEL}{model_str}"
         torch.save(self.model.state_dict(), model_path)    
         return model_str
@@ -117,34 +117,33 @@ TODO:
 '''
 
 if __name__ == "__main__":
-    while(True):
-        experiences = []
-        #iterate over all files in the config.MEMORY folder
-        for file in os.listdir(config.MEMORY):
-            experiences.extend(np.load(f"./{config.MEMORY}{file}", allow_pickle=True))
-        
-        
-        model = AgentNetwork()
-        
-        if len(os.listdir(f"{config.BEST_MODEL}")) != 0:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Training using device {device}")
+
+    model = AgentNetwork(input_channels = config.IN_CHANNELS, num_hidden_blocks = config.NUM_BLOCKS).to(device)
+    if len(os.listdir(f"{config.BEST_MODEL}")) != 0:
             weight_file = os.listdir(f"{config.BEST_MODEL}")[0]
             model.load_state_dict(torch.load(f"{config.BEST_MODEL}{weight_file}"))
-        
-        trainer = Trainer(model)
-        
-        old_model = trainer.save_model()
+    else:
+        torch.save(model.state_dict(), f"{config.BEST_MODEL}best-model.pth")
+    
+    trainer = Trainer(model)
+
+    while(True):
+        experiences = []
+        for file in os.listdir(config.MEMORY):
+            experiences.extend(np.load(f"./{config.MEMORY}{file}", allow_pickle=True))
         
         losses = trainer.train(experiences, config.TRAIN_STEPS)
         trainer.plot_loss(losses)
         
         new_model = trainer.save_model()
         
-        model_eval = Evaluation(new_model, old_model)
+        model_eval = Evaluation(f"{config.MODEL}{new_model}", f"{config.BEST_MODEL}best-model.pth")
         
         results = model_eval.evaluate(config.EVAL_GAMES)
         
-        if(results["model_1"] > results["model_2"]):
+        if(results["model_1"] >= results["model_2"]):
             os.system(f"cp {config.MODEL}{new_model} {config.BEST_MODEL}best-model.pth")
         
-        
-    
+        os.system(f"rm {config.MODEL}{new_model}")

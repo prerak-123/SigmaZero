@@ -16,10 +16,10 @@ class Evaluation:
             "model_2": 0,
             "draws": 0
         }
-        agent_1 = Agent(local_predictions=True, model_path=self.model_1)
-        agent_2 = Agent(local_predictions=True, model_path=self.model_2)
+        agent_1 = Agent(local_preds=True, model_path=self.model_1)
+        agent_2 = Agent(local_preds=True, model_path=self.model_2)
         for i in range(n):
-            print(f"Playing {i + 1}/n game")
+            print(f"Playing {i + 1}/{n} game")
             game = Game(ChessEnv(), agent_1, agent_2)
             # play deterministally
             result = game.game(stochastic=False, save=False)

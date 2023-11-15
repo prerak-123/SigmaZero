@@ -107,6 +107,7 @@ class Game:
 
         sum_move_visits = current_player.mcts.get_sum_N()
         probs = [current_player.mcts.get_edge_N(e) / sum_move_visits for e in moves]
+        moves = np.array(moves)
         
         if stochastic:
             # choose a move based on a probability distribution
