@@ -15,6 +15,13 @@ from evaluate import Evaluation
 from utils import moves_to_output_vector
 import os
 
+EPS = 1e-10
+
+def entropy_loss(inpt, target):
+    loss = -torch.mean(torch.sum(target*torch.log(inpt +  EPS), dim = 1))
+    return loss
+
+
 class Trainer:
     
     def __init__(self, model: nn.Module, torch_device = None):
@@ -32,7 +39,7 @@ class Trainer:
         
         self.optimiser = Adam(params=self.model.parameters(), lr=config.LEARNING_RATE)
         self.value_loss = nn.MSELoss()
-        self.policy_loss = nn.CrossEntropyLoss()
+        self.policy_loss = entropy_loss
         
     
     def get_Xy(self, data):
@@ -87,13 +94,14 @@ class Trainer:
 
     def plot_loss(self, losses):
         plt.subplot(1, 2, 1)  
+
+        # for each index calculate cumulative average of last 100 iterations
         plt.plot(range(len(losses[0])), losses[0], 'b')
         plt.title('Value Loss')
         plt.xlabel('Time Stamp')
         plt.ylabel('Loss')
-        
+
         plt.subplot(1, 2, 2)
-        
         plt.plot(range(len(losses[1])), losses[1], 'r')
         plt.title('Policy Loss')
         plt.xlabel('Time Stamp')
