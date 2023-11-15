@@ -12,8 +12,8 @@ NUM_BLOCKS = 19
 
 # --------- Training Parameters --------------------
 BATCH_SIZE = 256
-LEARNING_RATE = 0.02 #Decay to 0.02, 0.002....?
-TRAIN_STEPS = 30000
+LEARNING_RATE = 0.2 #Decay to 0.02, 0.002....?
+TRAIN_STEPS = 40000
 
 #-----------Directories---------------------------
 IMAGES = "./images/"

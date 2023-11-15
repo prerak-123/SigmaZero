@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 # from mcts import MCTS
 from CPP_backend import MCTS
+import chess
 
 def get_winner(result: str) -> int:
     return 1 if result == "1-0" else - 1 if result == "0-1" else 0
@@ -114,9 +115,10 @@ class Game:
             best_move = np.random.choice(moves, p=probs)
         else:
             # choose a move based on the highest N
-            best_move = moves[np.argmax(probs)]
+            best_move = np.int64(moves[np.argmax(probs)])
 
-        print("best move", current_player.mcts.get_edge_uci(best_move.item()))
+        # print("best move", current_player.mcts.get_edge_uci(best_move.item()))
+        print("Best move:", self.env.board.san(chess.Move.from_uci(current_player.mcts.get_edge_uci(best_move.item()))))
         # play the move
         self.env.step(current_player.mcts.get_edge_action(best_move.item()))
         
