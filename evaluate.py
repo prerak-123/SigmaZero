@@ -6,18 +6,18 @@ from game import Game
 from random import shuffle
 
 def get_openings(n: int, pgn_file: str = "Openings_sf.pgn"):
-    pgn = open(pgn_file)
     
-    openings = []
-    game = chess.pgn.read_game(pgn)
-    while game is not None:
-        board = game.board()
-        for move in game.mainline_moves():
-            board.push(move)
-
-        openings.append((game, board.fen()))
-            
+    with open(pgn_file) as pgn:
+        openings = []
         game = chess.pgn.read_game(pgn)
+        while game is not None:
+            board = game.board()
+            for move in game.mainline_moves():
+                board.push(move)
+
+            openings.append((game, board.fen()))
+                
+            game = chess.pgn.read_game(pgn)
 
     shuffle(openings)
 
@@ -38,16 +38,16 @@ class Evaluation:
                      }
                      
 
-    def evaluate(self, n: int, pgn: str = "Openings_sf.pgn") -> dict:
+    def evaluate(self, n: int = config.EVAL_GAMES, pgn: str = "Openings_sf.pgn") -> dict:
         """
         For n openings, let the two models play each other and keep a score
         """
         
         # agent_1 = Agent(local_predictions=True, model_path=self.model_1)
         # agent_2 = Agent(local_predictions=True, model_path=self.model_2)
-        i = 1
+        i = 0
         for opn, fen in get_openings(n=n, pgn_file=pgn):
-            print(f"Playing opening {i}")
+            print(f"Playing opening {i + 1}")
             print(f"White: {opn.headers['White']}")
             print(f"Black: {opn.headers['Black']}")
             i += 1
@@ -56,7 +56,7 @@ class Evaluation:
             # play deterministally
             game = Game(env, self.agent_1, self.agent_2)
             result = game.game(stochastic=False, save=False)
-            self.update_score(result)
+            self.update_score(result, True)
             print(f"Result: {result}")
             print("Final board position: ")
             print(game.env.board)
@@ -64,7 +64,7 @@ class Evaluation:
             # turn around the colors
             game = Game(env, self.agent_2, self.agent_1)
             result = game.game(stochastic=False, save=False)
-            self.update_score(result)
+            self.update_score(result, False)
             print(f"Result: {result}")
             print("Final board position: ")
             print(game.env.board)
@@ -77,13 +77,19 @@ class Evaluation:
         return self.score
 
 
-    def update_score(self, result):
+    def update_score(self, result, agent_1):
         if result == 0: 
             self.score["draws"] += 1
-        elif result == 1: 
-            self.score["model_1"] += 1
+        elif result > 0:
+            if agent_1: 
+                self.score["model_1"] += 1
+            else:
+                self.score["model_2"] += 1
         else: 
-            self.score["model_2"] += 1
+            if agent_1:
+                self.score["model_2"] += 1
+            else:
+                self.score["model_1"] += 1
             
 
     def reset_score(self):
