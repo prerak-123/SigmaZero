@@ -93,16 +93,22 @@ class Trainer:
         return losses
 
     def plot_loss(self, losses):
-        plt.subplot(1, 2, 1)  
+        plt.title(f"Learning Rate = {config.LEARNING_RATE}")
+        plt.subplot(1, 2, 1) 
+
+        running_avg_val = np.cumsum(losses[0])/np.arange(1, len(losses[0]) + 1) 
 
         # for each index calculate cumulative average of last 100 iterations
         plt.plot(range(len(losses[0])), losses[0], 'b')
+        plt.plot(range(len(running_avg_val)), running_avg_val, 'o')
         plt.title('Value Loss')
         plt.xlabel('Time Stamp')
         plt.ylabel('Loss')
 
+        running_avg_pol = np.cumsum(losses[1])/np.arange(1, len(losses[1]) + 1) 
         plt.subplot(1, 2, 2)
         plt.plot(range(len(losses[1])), losses[1], 'r')
+        plt.plot(range(len(running_avg_pol)), running_avg_pol, 'g')
         plt.title('Policy Loss')
         plt.xlabel('Time Stamp')
         plt.ylabel('Loss')
@@ -152,6 +158,6 @@ if __name__ == "__main__":
         results = model_eval.evaluate(config.EVAL_GAMES)
         
         if(results["model_1"] >= results["model_2"]):
+            print("Obtained a better model")
             os.system(f"cp {config.MODEL}{new_model} {config.BEST_MODEL}best-model.pth")
         
-        os.system(f"rm {config.MODEL}{new_model}")

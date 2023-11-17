@@ -87,6 +87,9 @@ import numpy as np
 import time
 import logging
 
+from stockfish import Stockfish
+import os
+
 def state_to_input(fen: str):
 
     board = chess.Board(fen)
@@ -136,26 +139,30 @@ piece_scores = {
     chess.KING: 0
 }
 
+stockfish = Stockfish(os.path.expanduser(config.STOCKFISH))
+
 def estimate_winner(board: chess.Board) -> int:
     """
     Estimate the winner of the current node.
     Pawn = 1, Bishop = 3, Rook = 5, Queen = 9
     Positive score = white wins, negative score = black wins
     """
-    score = 0
 
-    for piece in board.piece_map().values():
-        if piece.color == chess.WHITE:
-            score += piece_scores[piece.piece_type]
-        else:
-            score -= piece_scores[piece.piece_type]
-    if np.abs(score) > 5:
-        if score > 0:
-            return 0.25
-        else:
-            return -0.25
+    try:
+        stockfish.set_fen_position(board.fen())
+        evaluation = stockfish.get_evaluation()
+    except:
+        stockfish = Stockfish(os.path.expanduser(config.STOCKFISH))
+        stockfish.set_fen_position(board.fen())
+        evaluation = stockfish.get_evaluation()
+
+    if evaluation['type'] == 'cp':
+        return float(np.tanh(evaluation['value'] / 100))
+    elif evaluation['type'] == 'mate':
+        return float(np.sign(evaluation['value']))
     else:
-        return 0
+        print('WRONG EVALUATION TYPE BY STOCKFISH')
+        assert(False)
 
 class ChessEnv:
     def __init__(self, fen:str = chess.STARTING_FEN):

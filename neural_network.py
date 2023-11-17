@@ -56,7 +56,7 @@ class AgentNetwork(nn.Module):
             nn.ReLU(),
             nn.Flatten(),
             nn.Linear(128, self.output_dims),
-            nn.Sigmoid()
+            nn.Softmax(dim=1)
         )
     
     def get_value_head(self, input_channels:int)->nn.Sequential:
