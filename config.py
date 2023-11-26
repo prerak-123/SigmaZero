@@ -1,19 +1,20 @@
 BOARD_SIZE = 8
-MAX_MOVES = 50
+MAX_MOVES = 150
 PREVIOUS_MOVES = 8
 SIMULATIONS_PER_MOVE = 800
 EVAL_GAMES = 3
 
-PUZZLE_PROB = 0.2
+PUZZLE_PROB = 0.6
 
 #-----------Model Parameters------------------------
 IN_CHANNELS = 19
 NUM_BLOCKS = 19
 
 # --------- Training Parameters --------------------
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 LEARNING_RATE = 0.002 #Decay to 0.02, 0.002....?
-TRAIN_STEPS = 40000
+WEIGHT_DECAY=1e-4
+TRAIN_STEPS = 100000
 
 #-----------Directories---------------------------
 IMAGES = "./images/"

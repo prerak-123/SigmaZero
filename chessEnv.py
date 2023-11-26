@@ -141,7 +141,7 @@ piece_scores = {
 
 stockfish = Stockfish(os.path.expanduser(config.STOCKFISH))
 
-def estimate_winner(board: chess.Board) -> int:
+def estimate_position(board: chess.Board) -> int:
     """
     Estimate the winner of the current node.
     Pawn = 1, Bishop = 3, Rook = 5, Queen = 9
