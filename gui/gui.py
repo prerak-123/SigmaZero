@@ -162,6 +162,7 @@ def chess_avh(BOARD):
                 BOARD.push(move)
                 index = None
                 index_moves = []
+
             # highlight possible moves
             else:
                 piece = BOARD.piece_at(index)
