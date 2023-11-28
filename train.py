@@ -1,10 +1,12 @@
-import numpy as np
+# Description: This file contains the training loop for the neural network
+# This also includes steps for evaluation and saving the best model
+
 import torch
-import torch.nn as nn
+from torch.nn import Module, MSELoss
 import config
 import logging
 from torch.optim import Adam
-import chess
+import chess.Board
 from transform import board_to_input
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -17,15 +19,19 @@ import os
 
 EPS = 1e-10
 
-def entropy_loss(inpt, target):
+## CE Loss for policy head 
+def entropy_loss(inpt:torch.Tensor, target:torch.Tensor)->torch.Tensor:
     loss = -torch.mean(torch.sum(target*torch.log(inpt +  EPS), dim = 1))
     return loss
-
+##############################################################################################################
 
 class Trainer:
     
-    def __init__(self, model: nn.Module, torch_device = None):
+    def __init__(self, model: Module, torch_device = None):
         '''
+        Trains the model on the given data
+        Reads the data from the memory folder, and trains on it.
+        
         model: An instance of AgentNetwork
         torch_device: Sets automatically to the available device if not passed as parameter
         '''
@@ -38,19 +44,20 @@ class Trainer:
         logging.info(f"Training device: {self.torch_device}")  
         
         self.optimiser = Adam(params=self.model.parameters(), lr=config.LEARNING_RATE)
-        self.value_loss = nn.MSELoss()
+        self.value_loss = MSELoss()
         self.policy_loss = entropy_loss
         
     
     def get_Xy(self, data):
         '''
+        Read the data from the memory folder and convert it to tensors
+        
         data: A list of experiences. Format should be [(state1, winner1, move_probs1), ...]
         
         return: 
         A three tuple (X->Tensor of states, y_value->Tensor of winners, y_policy->Tensor of move probabilities on planes)
         '''
         
-
         X = torch.stack( [ board_to_input( chess.Board( i[0] ) ) for i in data ] ).to(torch.float32).to(self.torch_device)
         
         y_policy = torch.tensor(np.array([moves_to_output_vector(i[1], chess.Board(i[0])).flatten() for i in data ])).to(torch.float32).to(self.torch_device)
@@ -66,7 +73,6 @@ class Trainer:
         
         y_vals_pred, y_probs_pred = self.model(X)
         
-        #TODO: Could add tunable lambda
         val_loss = self.value_loss(y_vals_pred, y_vals)
         policy_loss =  self.policy_loss(y_probs_pred, y_probs)
         loss = val_loss + policy_loss
@@ -124,11 +130,6 @@ class Trainer:
         torch.save(self.model.state_dict(), model_path)    
         return model_str
 
-'''
-TODO:
-1. Decide if this file is run individually or called by main.py
-2. Decide on format of storing and restoring experiences
-'''
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

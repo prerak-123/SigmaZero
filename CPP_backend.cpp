@@ -1,3 +1,8 @@
+/*
+    MCST implementation in C++ for chess
+    Interfaced with python using boost python
+    Check README for installation and compilation instructions
+*/
 #include <boost/python.hpp>
 #include <Python.h>
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -13,7 +18,8 @@
 #include <unordered_map>
 long long int cnt = 0;
 
-#define ll long long int
+typedef long long int ll;
+
 #define AMOUNT_OF_PLANES 73
 #define BOARD_SIZE 8
 #define DIRICHLET_NOISE 0.3
@@ -25,6 +31,7 @@ class C_Edge;
 class C_MCTS;
 class C_Edge;
 
+// One Node in the MCTS tree
 class C_Node{
     public:
         std::string state;
@@ -44,6 +51,7 @@ class C_Node{
         uint64_t get_edge(boost::python::object action);
 };
 
+// One Edge in the MCTS tree, which corresponds to one action
 class C_Edge{   
     public:
         C_Node* input_node;
@@ -63,9 +71,6 @@ class C_Edge{
         uint64_t get_N();
 };
 
-// class C_Action{
-
-// }
 
 class C_MCTS{
     public:
@@ -94,7 +99,7 @@ class C_MCTS{
         ~C_MCTS();
 };     
 
-
+// Recursively delete the MCTS tree beginning at node
 void delete_mcts_tree(C_Node* node){
 
     if(! node) return;
@@ -131,11 +136,9 @@ std::string C_Node::step(boost::python::object action){
 }
 
 bool C_Node::is_game_over(){
-    // Py_Initialize();
     boost::python::object chess_module = boost::python::import("chess");
     boost::python::object board = chess_module.attr("Board")(this->state);
     bool is_game_over = boost::python::extract<bool>(board.attr("is_game_over")());
-    // Py_Finalize();
     return is_game_over;
 }
 
@@ -314,8 +317,7 @@ void C_MCTS::map_valid_move(boost::python::object move){
 
 }
 
-// TODO : Need suggestions of how to implement probabilities to actions
-
+// 
 std::unordered_map<std::string, long double> C_MCTS::probabilities_to_actions(boost::python::object probabilities, std::string bord){
 	std::unordered_map <std::string, long double> actions;
 	boost::python::object chess = boost::python::import("chess");
@@ -483,6 +485,9 @@ boost::python::object C_MCTS::get_edge_action(uint64_t edge){
 std::string C_MCTS::get_edge_uci(uint64_t edge){
     return boost::python::extract<std::string>(((C_Edge*)edge)->action.attr("uci")());
 }
+
+// Python interface for the MCTS class
+// The Names of the objects are the string arguments
 
 BOOST_PYTHON_MODULE(CPP_backend)
 {

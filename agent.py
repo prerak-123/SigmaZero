@@ -1,18 +1,14 @@
-import numpy as np
+# Contains the Agent class, which is used to play chess moves on the environment.
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from neural_network import AgentNetwork
-# from mcts import MCTS # missing
-from CPP_backend import *
-import utils
-import chess
-import time
+from CPP_backend import MCTS
+
+from chess import STARTING_FEN
 import config
 import datetime
 
 class Agent:
-    def __init__(self,local_preds:bool = False, model_path:str|None = None,state:str = chess.STARTING_FEN, device=None):
+    def __init__(self,local_preds:bool = False, model_path:str|None = None,state:str = STARTING_FEN, device=None)->None:
         """
         An agent is an object that can play chessmoves on the environment.
         Based on the parameters, it can play with a local model, or send its input to a server.
@@ -32,14 +28,13 @@ class Agent:
             if model_path is not None:
                 self.model.load_state_dict(torch.load(model_path))
         else :
-            raise NotImplementedError("Server predictions not implemented yet")
+            raise NotImplementedError("Server predictions not implemented")
         
         self.state = state
         self.mcts = MCTS(self, state, True)
         
-    def run_simulations(self,n:int=1):
+    def run_simulations(self,n:int=1)->None:
         with torch.no_grad():
-
             self.mcts.run_simulations(n)
             
     def save_model(self,timestamped:bool = False)->str:
@@ -53,24 +48,16 @@ class Agent:
         
         return model_path
             
-    def predict(self, data:torch.Tensor):
+    def predict(self, data:torch.Tensor)->torch.Tensor:
         data = torch.Tensor(data).to(torch.float32).unsqueeze(0).to(self.device)
-        # print(data.shape)
-        # print("in agent predict")
         if self.local_preds:
-            # print('local')
             return self.predict_local(data)
         return self.predict_server(data)
     
-    def predict_local(self,data:torch.Tensor):
-        # self.model.eval()
-        
+    def predict_local(self,data:torch.Tensor)->(torch.Tensor,float):
         with torch.no_grad():
             v, p = self.model(data)
             return p.cpu(), v.cpu().item()
 
     def predict_server(self,data:torch.Tensor):
-        raise NotImplementedError("Server predictions not implemented yet")
-  
-if __name__=="__main__":
-    pass
+        raise NotImplementedError("Server predictions not implemented")

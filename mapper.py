@@ -1,3 +1,5 @@
+## This file contains the mappings for the chess planes
+
 from enum import IntEnum
 from typing import Tuple
 from chess import PieceType

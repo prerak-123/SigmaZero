@@ -1,3 +1,5 @@
+# Parameters for all the files #
+
 BOARD_SIZE = 8
 MAX_MOVES = 50
 PREVIOUS_MOVES = 8
@@ -21,6 +23,7 @@ MODEL = "./models/"
 MEMORY = "./memory/"
 PUZZLE = "./puzzles/"
 BEST_MODEL = "./best_model/"
+PGN = "./pgn/"
 
 #----------Executable Locations--------------------
 STOCKFISH = "~/stockfish/stockfish-ubuntu-x86-64-modern"

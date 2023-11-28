@@ -1,11 +1,13 @@
+# This file contains the Game class, which is used to play games for both training and testing. 
+
+
 from agent import Agent
 from chessEnv import ChessEnv, estimate_winner
 import config
 import numpy as np
-import config
 from datetime import datetime
 import time
-# from mcts import MCTS
+
 from CPP_backend import MCTS
 import chess
 
@@ -99,7 +101,7 @@ class Game:
         t2 = time.time()
         print(f"Time taken for {config.SIMULATIONS_PER_MOVE} simulations: {t2 - t1}")
 
-
+        # get all possible moves
         moves = []
         moves = current_player.mcts.get_all_edges(moves)
 
@@ -117,7 +119,6 @@ class Game:
             # choose a move based on the highest N
             best_move = np.int64(moves[np.argmax(probs)])
 
-        # print("best move", current_player.mcts.get_edge_uci(best_move.item()))
         print("Best move:", self.env.board.san(chess.Move.from_uci(current_player.mcts.get_edge_uci(best_move.item()))))
         # play the move
         self.env.step(current_player.mcts.get_edge_action(best_move.item()))
@@ -135,7 +136,7 @@ class Game:
         sum_move_visits = 0
         for e in moves:
             sum_move_visits += mcts.get_edge_N(e)
-        # sum_move_visits = sum(e.N for e in moves)
+        
         # create dictionary of moves and their probabilities
         search_probabilities = {
             mcts.get_edge_action(e).uci(): mcts.get_edge_N(e) / sum_move_visits for e in moves}

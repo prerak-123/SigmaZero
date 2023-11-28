@@ -1,3 +1,4 @@
+# Description: This file is used to collect experience data from the lichess database.
 import pandas as pd
 import config
 import threading
@@ -12,9 +13,12 @@ import sys
 import os
 import numpy as np
 
+# Location of the puzzles.csv file. Ensure the file is present at this location
 CSV_FILE = "puzzles.csv"
+# Number of games to play at once
 N = 5
 
+# Play a puzzle starting from the given fen and moves. This is still self-play
 def play_puzzle(fen, moves):
     model_path = None if len(os.listdir(config.BEST_MODEL)) == 0 else f"{config.BEST_MODEL}best-model.pth"
     white = Agent(local_preds=True, model_path=model_path)
@@ -27,6 +31,7 @@ def play_puzzle(fen, moves):
     
     game.game()
 
+# Play a full game from the start
 def play_normal():
     model_path = None if len(os.listdir(config.BEST_MODEL)) == 0 else f"{config.BEST_MODEL}best-model.pth"
     white=Agent(local_preds=True, model_path=model_path)

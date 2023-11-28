@@ -1,3 +1,5 @@
+# Evaluates the performance of two models against each other
+# Used to find if the model is improving
 from agent import Agent
 from chessEnv import ChessEnv
 import chess.pgn
@@ -5,7 +7,7 @@ import config
 from game import Game
 from random import shuffle
 
-def get_openings(n: int, pgn_file: str = "Openings_sf.pgn"):
+def get_openings(n: int, pgn_file: str = f"{config.PGN}Openings_sf.pgn"):
     
     with open(pgn_file) as pgn:
         openings = []
@@ -38,7 +40,7 @@ class Evaluation:
                      }
                      
 
-    def evaluate(self, n: int = config.EVAL_GAMES, pgn: str = "Openings_sf.pgn") -> dict:
+    def evaluate(self, n: int = config.EVAL_GAMES, pgn: str = f"{config.PGN}Openings_sf.pgn") -> dict:
         """
         For n openings, let the two models play each other and keep a score
         """
@@ -102,5 +104,5 @@ class Evaluation:
         
         
 if __name__ == "__main__":
-    eval = Evaluation(None, None)
+    eval = Evaluation(None, None) # replace with model paths
     eval.evaluate(config.EVAL_GAMES)
