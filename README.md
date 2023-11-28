@@ -1,11 +1,11 @@
 # SigmaZero
 Implementation of AlphaZero as part of the course project in CS337.
 
-## Compiling shared object file
-`g++ -O3 CPP_backend.cpp -shared -fpic -Wno-undef -I /usr/include/python3.10/ -L /usr/lib/x86_64-linux-gnu/  -lboost_python310 -lboost_system -lboost_numpy310 -o CPP_backend.so`
+## Instructions to Compile C++ backend
 
-## Compiling it on GPU server
-`g++ -O3 CPP_backend.cpp -shared -fpic -Wno-undef -I /users/ug21/hrishijd/SigmaZero/boost_1_82_0 -I /usr/include/python3.9/ -L /users/ug21/hrishijd/SigmaZero/boost_1_82_0/stage/lib/  -lboost_python311 -lboost_system -o CPP_backend.so`
+- Install Boost library from [here](https://www.boost.org/doc/libs/1_46_1/more/getting_started/unix-variants.html)
+- To compile C++ backend into a shared object file use : `g++ -O3 CPP_backend.cpp -shared -fpic -Wno-undef -I BOOST_INSTALL_PATH -I /usr/include/python3.x/ -L BOOST_INSTALL_PATH/stage/lib/  -lboost_python3x -lboost_system -o CPP_backend.so`
+- Replace `x` with appropriate python version number installed in your machine. Python 3.10 is recommended.
 
 ## Model Weights
 
