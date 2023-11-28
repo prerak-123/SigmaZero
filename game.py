@@ -2,7 +2,7 @@
 
 
 from agent import Agent
-from chessEnv import ChessEnv, estimate_winner
+from chessEnv import ChessEnv, estimate_position
 import config
 import numpy as np
 from datetime import datetime
@@ -57,15 +57,15 @@ class Game:
             counter += 1
             if counter > config.MAX_MOVES or self.env.board.is_repetition(3):
                 # estimate the winner based on piece values
-                winner = estimate_winner(self.env.board)
+                winner = estimate_position(self.env.board)
                 full_game = False
                 break
         if full_game:
-            # get the winner based on the result of the game
+        #   get the winner based on the result of the game
             winner = get_winner(self.env.board.result())
-        # save game result to memory for all games
-        for index, element in enumerate(self.memory[-1]):
-            self.memory[-1][index] = (element[0], element[1], winner)
+        # # save game result to memory for all games
+        # for index, element in enumerate(self.memory[-1]):
+        #     self.memory[-1][index] = (element[0], element[1], winner)
         if save:
             self.save_game(name="game", full_game=full_game)
 
@@ -140,8 +140,7 @@ class Game:
         # create dictionary of moves and their probabilities
         search_probabilities = {
             mcts.get_edge_action(e).uci(): mcts.get_edge_N(e) / sum_move_visits for e in moves}
-        # winner gets added after game is over
-        self.memory[-1].append((state, search_probabilities, None))
+        self.memory[-1].append((state, search_probabilities, estimate_position(chess.Board(state))))
 
     def save_game(self, name: str = "game", full_game: bool = False) -> None:
         """

@@ -65,7 +65,7 @@ piece_scores = {
 ### ensure stockfish is installed and the path is correct
 stockfish = Stockfish(os.path.expanduser(config.STOCKFISH))
 
-def estimate_winner(board: chess.Board) -> int:
+def estimate_position(board: chess.Board) -> int:
     """
     Estimate the winner of the current node. A piece counting heuristic is used.
     Pawn = 1, Bishop = 3, Rook = 5, Queen = 9

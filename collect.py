@@ -51,7 +51,7 @@ def thread_func(i):
 
             if(my_index >= len(dataset)):
                 return
-            print(f"Playing puzzle of index {my_index}")
+            print(f"Playing puzzle of index {my_index} with a rating {dataset['Rating'][my_index]}")
             fen, moves = dataset["FEN"][my_index], dataset["Moves"][my_index].split()       
             play_puzzle(fen, moves)
             my_index += N
@@ -71,7 +71,6 @@ if __name__ == "__main__":
     dataset = pd.read_csv(f"{config.PUZZLE}{CSV_FILE}")
     dataset = dataset[["FEN", "Moves", "Rating"]]
     dataset["Rating"] = pd.to_numeric(dataset["Rating"])
-    dataset.sort_values(by="Rating", inplace=True)
    
     with Pool() as p:
         p.map(thread_func, range(last_game, last_game + N))

@@ -43,7 +43,7 @@ class Trainer:
         self.torch_device = torch_device
         logging.info(f"Training device: {self.torch_device}")  
         
-        self.optimiser = Adam(params=self.model.parameters(), lr=config.LEARNING_RATE)
+        self.optimiser = Adam(params=self.model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
         self.value_loss = MSELoss()
         self.policy_loss = entropy_loss
         
@@ -99,30 +99,39 @@ class Trainer:
         return losses
 
     def plot_loss(self, losses):
-        plt.title(f"Learning Rate = {config.LEARNING_RATE}")
-        plt.subplot(1, 2, 1) 
+        
+        figure, axis = plt.subplots(2, 2)  
 
         running_avg_val = np.cumsum(losses[0])/np.arange(1, len(losses[0]) + 1) 
+        running_avg_pol = np.cumsum(losses[1])/np.arange(1, len(losses[1]) + 1) 
+        
 
         # for each index calculate cumulative average of last 100 iterations
-        plt.plot(range(len(losses[0])), losses[0], 'b')
-        plt.plot(range(len(running_avg_val)), running_avg_val, 'o')
-        plt.title('Value Loss')
-        plt.xlabel('Time Stamp')
-        plt.ylabel('Loss')
+        axis[0, 0].plot(range(len(losses[0])), losses[0], 'b')
+        axis[0, 0].set_title('Value Loss')
+        axis[0, 0].set_xlabel('Time Stamp')
+        axis[0, 0].set_ylabel('Loss')
+        
+        axis[1, 0].plot(range(len(running_avg_val)), running_avg_val, 'm')
+        axis[1, 0].set_title('Average Value Loss')
+        axis[1, 0].set_xlabel('Time Stamp')
+        axis[1, 0].set_ylabel('Loss')
 
-        running_avg_pol = np.cumsum(losses[1])/np.arange(1, len(losses[1]) + 1) 
-        plt.subplot(1, 2, 2)
-        plt.plot(range(len(losses[1])), losses[1], 'r')
-        plt.plot(range(len(running_avg_pol)), running_avg_pol, 'g')
-        plt.title('Policy Loss')
-        plt.xlabel('Time Stamp')
-        plt.ylabel('Loss')
+        axis[0, 1].plot(range(len(losses[1])), losses[1], 'r')
+        axis[0, 1].set_title('Policy Loss')
+        axis[0, 1].set_xlabel('Time Stamp')
+        axis[0, 1].set_ylabel('Loss')
         
-        plt.tight_layout()
+        axis[1, 1].plot(range(len(running_avg_pol)), running_avg_pol, 'g')
+        axis[1, 1].set_title('Average Policy Loss')
+        axis[1, 1].set_xlabel('Time Stamp')
+        axis[1, 1].set_ylabel('Loss')
         
-        plt.savefig(f"{config.IMAGES}loss-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.png")
+        figure.tight_layout()
+                
+        plt.savefig(f"{config.IMAGES}loss-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}_LR={config.LEARNING_RATE}.png")
         plt.clf()
+        plt.close()
         
     def save_model(self):
         model_str = f"model-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pth"

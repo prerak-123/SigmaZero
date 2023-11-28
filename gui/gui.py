@@ -52,14 +52,17 @@ def update(scrn,board):
     pygame.display.flip()
 
 def chess_hvh(BOARD):
+    # display size
+    X = 800
+    Y = 800
+    # create screen
+    scrn = pygame.display.set_mode((X, Y))
+    
     scrn.fill((222, 184, 136))
     pygame.display.set_caption('Chess')
 
     # variable to be used later
     index_moves = []
-
-    clock = pygame.time.Clock()  # create a clock object
-
     status = True
     while status:
         for event in pygame.event.get():
@@ -117,89 +120,76 @@ def chess_hvh(BOARD):
         # update screen
         update(scrn, BOARD)
 
-        # control the frame rate
-        clock.tick(30)
 
     # deactivates the pygame library
     pygame.quit()
 
-
-def chess_avh(BOARD, agent):
+def chess_avh(BOARD):
     '''
     agent vs human game
     '''
-    agent_color = random.choice([True, False])
+    # display size
+    X = 800
+    Y = 800
+    # create screen
+    scrn = pygame.display.set_mode((X, Y))
+
+    agent_color = False
     scrn.fill((222, 184, 136))
     pygame.display.set_caption('Chess')
 
     # variable to be used later
     index_moves = []
 
-    status = True
-    while status:
-        # update screen
-        update(scrn, BOARD)
+    # update screen
+    update(scrn, BOARD)
+    
+    for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONDOWN:
 
-        if BOARD.turn == agent_color:
-            move = agent(BOARD)
-            BOARD.push(move)
             scrn.fill((222, 184, 136))
 
-        else:
-            for event in pygame.event.get():
-                # if event object type is QUIT
-                # then quitting the pygame
-                # and program both.
-                if event.type == pygame.QUIT:
-                    status = False
+            # get pos of mouse
+            pos = pygame.mouse.get_pos()
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
+            # find which square was clicked and index of it
+            square = (math.floor(pos[0] / 100), math.floor(pos[1] / 100))
+            index = (7 - square[1]) * 8 + (square[0])
 
-                    scrn.fill((222, 184, 136))
+            # if we have already highlighted moves and are making a move
+            if index in index_moves:
+                move = moves[index_moves.index(index)]
+                BOARD.push(move)
+                index = None
+                index_moves = []
 
-                    # get pos of mouse
-                    pos = pygame.mouse.get_pos()
+            # highlight possible moves
+            else:
+                piece = BOARD.piece_at(index)
 
-                    # find which square was clicked and index of it
-                    square = (math.floor(pos[0] / 100), math.floor(pos[1] / 100))
-                    index = (7 - square[1]) * 8 + (square[0])
+                if piece is None:
+                    pass
+                else:
+                    all_moves = list(BOARD.legal_moves)
+                    moves = []
+                    for human_mvt in all_moves:
+                        if human_mvt.from_square == index:
+                            moves.append(human_mvt)
 
-                    # if we have already highlighted moves and are making a move
-                    if index in index_moves:
-                        move = moves[index_moves.index(index)]
-                        BOARD.push(move)
-                        index = None
-                        index_moves = []
+                            t = human_mvt.to_square
 
-                    # highlight possible moves
-                    else:
-                        piece = BOARD.piece_at(index)
+                            TX1 = 100 * (t % 8)
+                            TY1 = 100 * (7 - t // 8)
 
-                        if piece is None:
-                            pass
-                        else:
-                            all_moves = list(BOARD.legal_moves)
-                            moves = []
-                            for m in all_moves:
-                                if m.from_square == index:
-                                    moves.append(m)
+                            pygame.draw.rect(scrn, BLUE, pygame.Rect(TX1, TY1, 100, 100), 5)
 
-                                    t = m.to_square
+                    index_moves = [a.to_square for a in moves]
 
-                                    TX1 = 100 * (t % 8)
-                                    TY1 = 100 * (7 - t // 8)
-
-                                    pygame.draw.rect(scrn, BLUE, pygame.Rect(TX1, TY1, 100, 100), 5)
-
-                            index_moves = [a.to_square for a in moves]
-
-        # deactivates the pygame library
-        if BOARD.outcome() is not None:
-            print(BOARD.outcome())
-            status = False
-            print(BOARD)
-
-    pygame.quit()
+    # deactivates the pygame library
+    if BOARD.outcome() is not None:
+        print(BOARD.outcome())
+        print(BOARD)
+    return human_mvt
 
 def chess_ava(BOARD,agent1,agent2):
 
