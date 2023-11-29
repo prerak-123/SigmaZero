@@ -1,6 +1,6 @@
 # Description: This file contains the training loop for the neural network
 # This also includes steps for evaluation and saving the best model
-
+import numpy as np
 import torch
 from torch.nn import Module, MSELoss
 import config
