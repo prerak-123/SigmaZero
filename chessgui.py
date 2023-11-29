@@ -43,6 +43,24 @@ pieces = {
     'K': pygame.transform.scale(pygame.image.load('./gui/images/w_king.png'), (100, 100)),
 }
 
+def update(scrn,board):
+    '''
+    updates the screen basis the board class
+    '''
+    for i in range(64):
+        piece = board.piece_at(i)
+        if piece == None:
+            pass
+        else:
+            scrn.blit(pieces[str(piece)],((i%8)*100,700-(i//8)*100))
+    
+    for i in range(7):
+        i=i+1
+        pygame.draw.line(scrn,WHITE,(0,i*100),(800,i*100))
+        pygame.draw.line(scrn,WHITE,(i*100,0),(i*100,800))
+
+    pygame.display.flip()
+
 def get_winner(result: str) -> int:
     return 1 if result == "1-0" else - 1 if result == "0-1" else 0
       
@@ -100,6 +118,8 @@ def chess_avh(BOARD):
                                 pygame.draw.rect(scrn, GREY, pygame.Rect(TX1, TY1, 100, 100), 5)
 
                         index_moves = [a.to_square for a in moves]
+
+        update(scrn, BOARD)
 
     if BOARD.outcome() is not None:
         print(BOARD.outcome())
