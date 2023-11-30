@@ -80,7 +80,7 @@ Also contains the implementation of the class ``ChessEnv`` which serves as the e
 
 - __chessgui.py__
 
-A simple GUI implementation to play against the agent. Requires weights to be present in the location ``best_model\best-model.pth``.
+A simple GUI implementation to play against the agent. Requires weights to be present in the location ``best_model\best-model.pth``. Ensure that you have the pygame module installed and working.
 
 - __collect.py__
 
