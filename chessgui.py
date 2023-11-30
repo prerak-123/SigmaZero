@@ -21,6 +21,8 @@ scrn = pygame.display.set_mode((X, Y))
 pygame.init()
 # colors
 WHITE = (255, 255, 255)
+LGREY = (238,238,210)
+DGREY = (118,150,86)
 GREY = (128, 128, 128)
 YELLOW = (204, 204, 0)
 BLUE = (50, 255, 255)
@@ -42,24 +44,6 @@ pieces = {
     'Q': pygame.transform.scale(pygame.image.load('./gui/images/w_queen.png'), (100, 100)),
     'K': pygame.transform.scale(pygame.image.load('./gui/images/w_king.png'), (100, 100)),
 }
-
-def update(scrn,board):
-    '''
-    updates the screen basis the board class
-    '''
-    for i in range(64):
-        piece = board.piece_at(i)
-        if piece == None:
-            pass
-        else:
-            scrn.blit(pieces[str(piece)],((i%8)*100,700-(i//8)*100))
-    
-    for i in range(7):
-        i=i+1
-        pygame.draw.line(scrn,WHITE,(0,i*100),(800,i*100))
-        pygame.draw.line(scrn,WHITE,(i*100,0),(i*100,800))
-
-    pygame.display.flip()
 
 def get_winner(result: str) -> int:
     return 1 if result == "1-0" else - 1 if result == "0-1" else 0
@@ -119,7 +103,7 @@ def chess_avh(BOARD):
 
                         index_moves = [a.to_square for a in moves]
 
-        update(scrn, BOARD)
+        update_board(scrn, BOARD)
 
     if BOARD.outcome() is not None:
         print(BOARD.outcome())
@@ -129,16 +113,24 @@ def chess_avh(BOARD):
 
 def update_board(scrn, board):
     # Function to update the chessboard display
-    scrn.fill((222, 184, 136))
+    # scrn.fill((222, 184, 136))
+
+    for i in range(9):
+            for j in range(8):
+                if (i + j) % 2 == 0:
+                    pygame.draw.rect(scrn, LGREY, pygame.Rect(i * 100, j * 100, 100, 100))
+                else:
+                    pygame.draw.rect(scrn, DGREY, pygame.Rect(i * 100, j * 100, 100, 100))
+
+    for i in range(1,8):
+        # i = i + 1
+        pygame.draw.line(scrn, WHITE, (0, i * 100), (800, i * 100))
+        pygame.draw.line(scrn, WHITE, (i * 100, 0), (i * 100, 800))
+
     for i in range(64):
         piece = board.piece_at(i)
         if piece is not None:
             scrn.blit(pieces[str(piece)], ((i % 8) * 100, 700 - (i // 8) * 100))
-
-    for i in range(7):
-        i = i + 1
-        pygame.draw.line(scrn, WHITE, (0, i * 100), (800, i * 100))
-        pygame.draw.line(scrn, WHITE, (i * 100, 0), (i * 100, 800))
 
     pygame.display.flip()
 
@@ -190,6 +182,7 @@ class Game:
 
             update_board(scrn, self.env.board)
         
+        time.sleep(5)
         pygame.quit()
         
         winner = get_winner(self.env.board.result())
