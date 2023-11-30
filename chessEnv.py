@@ -67,9 +67,7 @@ stockfish = Stockfish(os.path.expanduser(config.STOCKFISH))
 
 def estimate_position(board: chess.Board) -> int:
     """
-    Estimate the winner of the current node. A piece counting heuristic is used.
-    Pawn = 1, Bishop = 3, Rook = 5, Queen = 9
-    Positive score = white wins, negative score = black wins
+    Currently uses stockfish's evaluation function, but can be modified to use a simpler or more complicated heuristic based on need.
     """
 
     try:

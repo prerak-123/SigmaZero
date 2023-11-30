@@ -2,47 +2,6 @@ import chess
 from chess import Move
 import numpy as np
 import mapper
-# from node import Node #Missing
-
-# def save_input_state_to_imgs(input_state: np.ndarray, path: str):
-#     """
-#     Save an input state to images
-#     """
-#     start_time = time.time()
-#     # full image of all states
-#     # convert booleans to integers
-#     input_state = np.array(input_state)*np.uint8(255)
-#     # pad input_state with grey values
-#     input_state = np.pad(input_state, ((0, 0), (1, 1), (1, 1)),
-#                          'constant', constant_values=128)
-
-#     full_array = np.concatenate(input_state, axis=1)
-#     # more padding
-#     full_array = np.pad(full_array, ((4, 4), (5, 5)),
-#                         'constant', constant_values=128)
-#     img = Image.fromarray(full_array)
-#     img.save(f"{path}/full.png")
-#     print(
-#         f"*** Saving to images: {(time.time() - start_time):.6f} seconds ***")
-
-# def save_output_state_to_imgs(output_state: np.ndarray, path: str, name: str = "full"):
-#     """
-#     Save an output state to images
-#     """
-#     start_time = time.time()
-#     # full image of all states
-#     # pad input_state with grey values
-#     output_state = np.pad(output_state.astype(float)*255, ((0, 0), (1, 1), (1, 1)), 'constant', constant_values=128)
-#     full_array = np.concatenate(output_state, axis=1)
-#     # more padding
-#     full_array = np.pad(full_array, ((4, 4), (5, 5)), 'constant', constant_values=128)
-#     img = Image.fromarray(full_array.astype(np.uint8))
-#     if img.mode != 'RGB':
-#         img = img.convert('RGB')
-#     img.save(f"{path}/{name}.png")
-#     print(
-#         f"*** Saving to images: {(time.time() - start_time):.6f} seconds ***")
-
 
 def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
     """
@@ -90,29 +49,3 @@ def move_to_plane_index(move: str, board: chess.Board):
     col = 7 - (from_square // 8)
     return (plane_index, row, col)
 
-# def recvall(sock: socket.socket, count: int = 0) -> bytes:
-#     """
-#     Function to continuously receive data from a socket
-#     """
-#     buffer = b''
-#     if count == 0:
-#         while True:
-#             part = sock.recv(config.SOCKET_BUFFER_SIZE)
-#             buffer += part
-#             if len(part) < config.SOCKET_BUFFER_SIZE:
-#                 break
-#     else:
-#         while count > 0:
-#             part = sock.recv(config.SOCKET_BUFFER_SIZE)
-#             buffer += part
-#             count -= len(part)
-#     return buffer
-    
-# def get_height_of_tree(node: Node):
-#     if node is None:
-#         return 0
-
-#     h = 0
-#     for edge in node.edges:
-#         h = max(h, get_height_of_tree(edge.output_node))
-#     return h + 1
