@@ -1,7 +1,7 @@
 # SigmaZero
 Implementation of AlphaZero as part of the course project in CS337.
 
-The link to the report describing the implementations and results obtained can be found [here]()
+The link to the report describing the implementations and results obtained can be found [here](https://www.cse.iitb.ac.in/~kartikn/docs/SigmaZero.pdf)
 
 # Results
 
@@ -12,9 +12,14 @@ The link to the report describing the implementations and results obtained can b
 ## Plots
 
 All the plots obtained during training can be found [here](https://drive.google.com/drive/folders/1j1uye2L0v_v4zI3UOE_RFkkT7dXK5Cai?usp=sharing)
+
 ## Visualizing action policy
 
 The figures obtained to visualize the action policy tensor can be found [here](https://drive.google.com/drive/folders/1VcsbNjf1xEZX4O0cB90V-mjies__e_qC?usp=sharing)
+
+## Video of a game against SigmaZero
+
+Video of a game played against the trained model on our GUI can be found [here](https://drive.google.com/drive/u/1/folders/18x4usppypEMzvOBg392J9WI2OyPgjE6_)
 
 # Instructions to run the code
 ## Instructions to Compile C++ backend
