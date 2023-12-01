@@ -1,7 +1,7 @@
 # SigmaZero
 Implementation of AlphaZero as part of the course project in CS337.
 
-The link to the report describing the implementations and results obtained can be found [here](https://www.cse.iitb.ac.in/~kartikn/docs/SigmaZero.pdf)
+The link to the report describing the implementations and results obtained can be found [here](https://drive.google.com/file/d/1jqbjoDxxrzdN9x-N2dWQc2hdTNLpiPmn/view?usp=sharing)
 
 # Results
 
